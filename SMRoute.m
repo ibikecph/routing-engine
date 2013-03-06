@@ -103,45 +103,41 @@
 }
 
 - (BOOL) isTooFarFromRoute:(CLLocation *)loc maxDistance:(int)maxDistance {
-//    debugLog(@"\nisTooFarFromRoute()");
     SMTurnInstruction *lastTurn = [self.pastTurnInstructions lastObject];
     if (self.turnInstructions.count > 0) {
-
         SMTurnInstruction *prevTurn = lastTurn;
         SMTurnInstruction *nextTurn;
-        for (int i = 0; i < 2; i++, prevTurn = nextTurn) {
-            nextTurn = [self.turnInstructions objectAtIndex:i];
-
-            /**
-             * Check if we are (significantly) moving away from the start.
-             * If you start routing but never pass through the first instruction location
-             * the routing will always return false.
-             * It will now check against the first route point and recalculate if neccessary
-             */
-            if (i == 0 && !lastTurn) {
-                if (self.visitedLocations && self.visitedLocations.count > 0) {
-                    CLLocation *firstLoc = [[self.visitedLocations objectAtIndex:0] objectForKey:@"location"];
-                    double initialDistanceFromStart = [firstLoc distanceFromLocation:nextTurn.loc];
-                    double currentDistanceFromStart = [loc distanceFromLocation:nextTurn.loc];
-                    debugLog(@"Initial distance from start: %g", initialDistanceFromStart);
-                    debugLog(@"Current distance from start: %g", currentDistanceFromStart);
-                    return currentDistanceFromStart > initialDistanceFromStart + maxDistance;
+        @synchronized(self.turnInstructions) {
+            for (int i = 0; i < 2; i++, prevTurn = nextTurn) {
+                nextTurn = [self.turnInstructions objectAtIndex:i];
+                
+                /**
+                 * Check if we are (significantly) moving away from the start.
+                 * If you start routing but never pass through the first instruction location
+                 * the routing will always return false.
+                 * It will now check against the first route point and recalculate if neccessary
+                 */
+                if (i == 0 && !lastTurn) {
+                    if (self.visitedLocations && self.visitedLocations.count > 0) {
+                        CLLocation *firstLoc = [[self.visitedLocations objectAtIndex:0] objectForKey:@"location"];
+                        double initialDistanceFromStart = [firstLoc distanceFromLocation:nextTurn.loc];
+                        double currentDistanceFromStart = [loc distanceFromLocation:nextTurn.loc];
+                        debugLog(@"Initial distance from start: %g", initialDistanceFromStart);
+                        debugLog(@"Current distance from start: %g", currentDistanceFromStart);
+                        return currentDistanceFromStart > initialDistanceFromStart + maxDistance;
+                    }
+                    return FALSE;
                 }
-                return FALSE;
+                if (![self isTooFarFromRouteSegment:loc from:prevTurn to:nextTurn maxDistance:maxDistance]) {
+                    for (int k = 0; k < i; k++)
+                        [self updateSegment];
+                    if (approachingTurn)
+                        approachingTurn = approachingTurn || i > 0;
+                    return NO;
+                }
             }
-            if (![self isTooFarFromRouteSegment:loc from:prevTurn to:nextTurn maxDistance:maxDistance]) {
-//                if (i > 0)
-//                    debugLog(@"correcting segment to %@", nextTurn.wayName);
-                for (int k = 0; k < i; k++)
-                    [self updateSegment];
-                if (approachingTurn)
-                    approachingTurn = approachingTurn || i > 0;
-                return NO;
-            } else {
-//                debugLog(@"distance from path: %g too far (limit is %d)", d, maxDistance);
-            }
+            return YES;
         }
-        return YES;
     }
     return NO;
 }
@@ -237,8 +233,10 @@
          }];
     }
 
-    if (self.turnInstructions.count <= 0)
-        return;
+    @synchronized(self.turnInstructions) {
+        if (self.turnInstructions.count <= 0)
+            return;        
+    }
     
     @synchronized(self.recalcMutex) {
         if (self.recalculationInProgress) {
