@@ -500,10 +500,10 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     if (self.pastTurnInstructions.count == 0)
         return [loc distanceFromLocation:nextTurn.loc];
 
-    CGFloat distance = 0.0f;
-    for (int i = self.lastVisitedWaypointIndex >= 0 ? self.lastVisitedWaypointIndex : 0; i < nextTurn.waypointsIndex; i++) {
+    int firstIndex = self.lastVisitedWaypointIndex >= 0 ? self.lastVisitedWaypointIndex + 1 : 0;
+    CGFloat distance = [loc distanceFromLocation:[self.waypoints objectAtIndex:firstIndex]];
+    for (int i = firstIndex; i < nextTurn.waypointsIndex; i++) {
         double d = [((CLLocation *)[self.waypoints objectAtIndex:i]) distanceFromLocation:[self.waypoints objectAtIndex:(i + 1)]];
-//        debugLog(@"[%d - %d] = %.1f", i, i + 1, d);
         distance += d;
     }
 
