@@ -21,8 +21,7 @@
 @end
 
 @implementation SMRoute {
-
-
+    double minDistance;
 }
 
 - (id)init {
@@ -108,6 +107,7 @@
         SMTurnInstruction *prevTurn = lastTurn;
         SMTurnInstruction *nextTurn;
         @synchronized(self.turnInstructions) {
+            self.lastCorrectedLocation = loc.coordinate;
             for (int i = 0; i < 2; i++, prevTurn = nextTurn) {
                 nextTurn = [self.turnInstructions objectAtIndex:i];
                 
@@ -639,7 +639,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([[jsonRoot objectForKey:@"status"] intValue] != 0)) {
                     if (self.delegate) {
                         dispatch_async(dispatch_get_main_queue(), ^{
-                            [self.delegate routeNotFound];
+                            [self.delegate routeRecalculationDone];
                             return;
                         });
                     }
