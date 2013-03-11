@@ -18,6 +18,7 @@
 @property (nonatomic, strong) SMRequestOSRM * request;
 @property (nonatomic, strong) CLLocation * lastRecalcLocation;
 @property (nonatomic, strong) NSObject * recalcMutex;
+@property CGFloat distanceFromRoute;
 @end
 
 @implementation SMRoute {
@@ -63,7 +64,7 @@
 }
 
 - (BOOL) isTooFarFromRouteSegment:(CLLocation *)loc from:(SMTurnInstruction *)turnA to:(SMTurnInstruction *)turnB maxDistance:(double)maxDistance {
-    double min = 100000.0;
+    double min = MAXFLOAT;
 
     for (int i = self.lastVisitedWaypointIndex; i < turnB.waypointsIndex; i++) {
         CLLocation *a = [self.waypoints objectAtIndex:i];
@@ -82,18 +83,21 @@
         }
     }
     
-    if (min <= maxDistance) {
+    if (min <= maxDistance && min < self.distanceFromRoute) {
         debugLog(@"=============================");
         debugLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
+
         CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
         CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
         debugLog(@"Location A: %@", a);
         debugLog(@"Location B: %@", b);
         CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
+
+        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
         
         self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
         debugLog(@"Heading: %f", self.lastCorrectedHeading);
-        self.lastCorrectedLocation = coord;
+        self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
         debugLog(@"Closest point: (%f %f)", coord.latitude, coord.longitude);
         debugLog(@"=============================");
     }
@@ -107,7 +111,8 @@
         SMTurnInstruction *prevTurn = lastTurn;
         SMTurnInstruction *nextTurn;
         @synchronized(self.turnInstructions) {
-            self.lastCorrectedLocation = loc.coordinate;
+            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:loc.coordinate altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
+            self.distanceFromRoute = MAXFLOAT;
             for (int i = 0; i < 2; i++, prevTurn = nextTurn) {
                 nextTurn = [self.turnInstructions objectAtIndex:i];
                 

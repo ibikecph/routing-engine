@@ -127,19 +127,6 @@ double distanceFromPointOnArc(double dA, double dB, double dAB) {
         return (dA + dB > dAB) ? MIN(dA, dB) : 0.0;
     }
     
-    // If alpha is obtuse and beta is acute angle, then
-    // distance is equal to dA:
-    if (alpha > M_PI_2 && beta < M_PI_2)
-        return dA;
-    
-    // Analogously, if beta is obtuse and alpha is acute angle, then
-    // distance is equal to dB:
-    if (beta > M_PI_2 && alpha < M_PI_2)
-        return dB;
-    
-    // If both alpha and beta are acute or both obtuse or one of them (or both) are right,
-    // distance is the height of the spherical triangle ABC:
-    
     // Again, unlikely, since it would render at least pi/2*EARTH_RADIUS_IN_METERS, which is too much.
     if (cos(a) == 0.0)
         return -1;

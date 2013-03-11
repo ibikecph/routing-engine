@@ -49,7 +49,7 @@
 @property NSString * routeChecksum;
 @property NSString * destinationHint;
 
-@property CLLocationCoordinate2D lastCorrectedLocation;
+@property (nonatomic, strong) CLLocation * lastCorrectedLocation;
 @property double lastCorrectedHeading;
 
 
