@@ -84,6 +84,7 @@
     }
     
     if (min <= maxDistance && min < self.distanceFromRoute) {
+        self.distanceFromRoute = min;
         debugLog(@"=============================");
         debugLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
 
@@ -93,11 +94,13 @@
         debugLog(@"Location B: %@", b);
         CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
 
-        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
+//        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
         
         self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
         debugLog(@"Heading: %f", self.lastCorrectedHeading);
-        self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
+        if (self.visitedLocations && self.visitedLocations.count > 0) {
+            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
+        }
         debugLog(@"Closest point: (%f %f)", coord.latitude, coord.longitude);
         debugLog(@"=============================");
     }
