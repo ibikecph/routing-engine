@@ -116,7 +116,7 @@
         @synchronized(self.turnInstructions) {
             self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:loc.coordinate altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
             self.distanceFromRoute = MAXFLOAT;
-            for (int i = 0; i < 2; i++, prevTurn = nextTurn) {
+            for (int i = 0; i < MIN([self.turnInstructions count], 2); i++, prevTurn = nextTurn) {
                 nextTurn = [self.turnInstructions objectAtIndex:i];
                 
                 /**
