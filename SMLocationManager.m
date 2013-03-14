@@ -87,7 +87,7 @@
 }
 
 + (CLLocationCoordinate2D)getNearest:(CLLocationCoordinate2D)coord {
-    NSString *url = [NSString stringWithFormat:@"%@/nearest?loc=%g,%g", OSRM_SERVER, coord.latitude, coord.longitude];
+    NSString *url = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", OSRM_SERVER, coord.latitude, coord.longitude];
     NSString *response = [NSString stringWithContentsOfURL:[NSURL URLWithString:url] encoding:NSUTF8StringEncoding error:nil];
     NSDictionary * r = [[[SBJsonParser alloc] init] objectWithString:response];
     if ([r objectForKey:@"mapped_coordinate"] && [[r objectForKey:@"mapped_coordinate"] isKindOfClass:[NSArray class]] && ([[r objectForKey:@"mapped_coordinate"] count] > 1)) {

@@ -130,8 +130,8 @@
                         CLLocation *firstLoc = [[self.visitedLocations objectAtIndex:0] objectForKey:@"location"];
                         double initialDistanceFromStart = [firstLoc distanceFromLocation:nextTurn.loc];
                         double currentDistanceFromStart = [loc distanceFromLocation:nextTurn.loc];
-                        debugLog(@"Initial distance from start: %g", initialDistanceFromStart);
-                        debugLog(@"Current distance from start: %g", currentDistanceFromStart);
+                        debugLog(@"Initial distance from start: %.6f", initialDistanceFromStart);
+                        debugLog(@"Current distance from start: %.6f", currentDistanceFromStart);
                         return currentDistanceFromStart > initialDistanceFromStart + maxDistance;
                     }
                     return FALSE;
