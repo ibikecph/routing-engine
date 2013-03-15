@@ -27,7 +27,4 @@
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error;
 
-+ (CLLocationCoordinate2D)getNearest:(CLLocationCoordinate2D)coord;
-+ (NSDictionary*)reverseGeocode:(CLLocationCoordinate2D)coord;
-
 @end
