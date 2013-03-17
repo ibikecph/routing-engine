@@ -591,9 +591,9 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             [self updateDistances:[SMLocationManager instance].lastValidLocation];
         }
         
-        if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute)]) {
-            [self.delegate startRoute];
-        }
+//        if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute)]) {
+//            [self.delegate startRoute];
+//        }
     }
 }
 
@@ -635,6 +635,9 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 //                }
 //            }
             [self setupRoute:jsonRoot];
+            if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute)]) {
+                [self.delegate startRoute];
+            }
         }
 
     } else if ([req.auxParam isEqualToString:@"routeRecalc"]) {
