@@ -8,7 +8,6 @@
 
 #import "SMLocationManager.h"
 #import <CoreLocation/CoreLocation.h>
-#import "SBJson.h"
 
 @implementation SMLocationManager
 

@@ -7,7 +7,6 @@
 //
 
 #import "SMTurnInstruction.h"
-#import "SBJson.h"
 
 @implementation SMTurnInstruction
 

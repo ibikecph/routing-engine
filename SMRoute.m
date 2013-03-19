@@ -10,7 +10,6 @@
 #import "SMRoute.h"
 #import "SMGPSUtil.h"
 #import "SMUtil.h"
-#import "SBJson.h"
 
 #define MAX_DISTANCE_FROM_PATH 20 // in meters
 
@@ -612,7 +611,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     if ([req.auxParam isEqualToString:@"startRoute"]) {
         NSString * response = [[NSString alloc] initWithData:req.responseData encoding:NSUTF8StringEncoding];
         if (response) {
-            id jsonRoot = [[[SBJsonParser alloc] init] objectWithString:response];
+            id jsonRoot = [NSJSONSerialization JSONObjectWithData:req.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithString:response];
             if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([[jsonRoot objectForKey:@"status"] intValue] != 0)) {
                 if (self.delegate) {
                     [self.delegate routeNotFound];
@@ -646,7 +645,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
                 
                 
-                id jsonRoot = [[[SBJsonParser alloc] init] objectWithString:response];
+                id jsonRoot = [NSJSONSerialization JSONObjectWithData:req.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithString:response];
                 if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([[jsonRoot objectForKey:@"status"] intValue] != 0)) {
                     if (self.delegate) {
                         dispatch_async(dispatch_get_main_queue(), ^{
