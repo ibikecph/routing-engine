@@ -121,11 +121,23 @@ double distanceFromPointOnArc(double dA, double dB, double dAB) {
         return -1.0;
     }
     
+    
     // If alpha or beta are zero or pi, it means that C is on the same circle as arc AB,
     // we just need to figure out if it is between AB:
     if (alpha == 0.0 || beta == 0.0) {
         return (dA + dB > dAB) ? MIN(dA, dB) : 0.0;
     }
+    
+    // If alpha is obtuse and beta is acute angle, then
+    // distance is equal to dA:
+    if (alpha > M_PI_2 && beta < M_PI_2)
+        return -1;
+    
+    // Analogously, if beta is obtuse and alpha is acute angle, then
+    // distance is equal to dB:
+    if (beta > M_PI_2 && alpha < M_PI_2)
+        return -1;
+
     
     // Again, unlikely, since it would render at least pi/2*EARTH_RADIUS_IN_METERS, which is too much.
     if (cos(a) == 0.0)
@@ -182,7 +194,7 @@ CLLocationCoordinate2D closestCoordinate(CLLocationCoordinate2D C, CLLocationCoo
         return C;
     }
     
-    return CLLocationCoordinate2DMake(A.latitude + (B.latitude - A.latitude) * x / dAB, A.longitude + (B.longitude - A.longitude) * x / dAB);
+    return CLLocationCoordinate2DMake(B.latitude - (B.latitude - A.latitude) * x / dAB, B.longitude - (B.longitude - A.longitude) * x / dAB);
 }
 
 BOOL sameCoordinates(CLLocation *loc1, CLLocation *loc2) {
