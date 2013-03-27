@@ -26,6 +26,7 @@
 
 @interface SMRoute : NSObject <SMRequestOSRMDelegate> {
     BOOL approachingTurn;
+    double distanceFromStart;
 }
 
 @property (nonatomic, weak) id<SMRouteDelegate> delegate;
