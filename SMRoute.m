@@ -174,7 +174,20 @@
                 if (currentTurn) {
                     double currentDistanceFromStart = [loc distanceFromLocation:currentTurn.loc];
                     debugLog(@"Current distance from start: %.6f", currentDistanceFromStart);
-                    return currentDistanceFromStart > /*distanceFromStart +*/ maxDistance;
+                    if (currentDistanceFromStart > maxDistance) {
+                        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 1)];
+                        if (nextTurn) {
+                            if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
+                                if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
+                                    [self updateSegment];
+                                    approachingTurn = YES;
+                                }
+                                return NO;
+                            }                
+                        }
+                        return YES;
+                    }
+//                    return currentDistanceFromStart > /*distanceFromStart +*/ maxDistance;
                 }
                 return NO;
             }
