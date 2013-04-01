@@ -96,7 +96,7 @@
 //        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
         
         
-        self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:b];//[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
+        self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
         debugLog(@"Heading: %f", self.lastCorrectedHeading);
         if (self.visitedLocations && self.visitedLocations.count > 0) {
             self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
