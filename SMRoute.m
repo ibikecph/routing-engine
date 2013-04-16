@@ -315,17 +315,29 @@
 
 
     // Check if we are finishing:
-    if (self.turnInstructions.count == 1) {
-        double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
-        double speed = loc.speed > 0 ? loc.speed : 5;
-        int timeToFinish = 100;
-        if (speed > 0) {
-            timeToFinish = distanceToFinish / speed;
-            debugLog(@"finishing in %d", timeToFinish);
-        }
-        if (distanceToFinish < 10.0 || timeToFinish <= 3) {
+    double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
+    double speed = loc.speed > 0 ? loc.speed : 5;
+    int timeToFinish = 100;
+    if (speed > 0) {
+        timeToFinish = distanceToFinish / speed;
+        debugLog(@"finishing in %d", timeToFinish);
+    }
+    /**
+     * are we close to the finish (< 10m or 3s left)?
+     */
+    if (distanceToFinish < 10.0 || timeToFinish <= 3) {
+        if (self.turnInstructions.count == 1) {
+            /**
+             * if there was only one instruction left go through usual channels
+             */
             approachingTurn = NO;
             [self updateSegment];
+            return;
+        } else {
+            /**
+             * we have somehow skipped most of the route (going through a park or unknown street)
+             */
+            [self.delegate reachedDestination];
             return;
         }
     }
