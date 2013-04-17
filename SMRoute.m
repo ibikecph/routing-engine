@@ -84,127 +84,98 @@
     
     if (min <= maxDistance && min < self.distanceFromRoute) {
         self.distanceFromRoute = min;
-        debugLog(@"=============================");
-        debugLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
 
         CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
         CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
-        debugLog(@"Location A: %@", a);
-        debugLog(@"Location B: %@", b);
         CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
 
 //        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
         
         
 //        self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
-        self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:b];
-        debugLog(@"Heading: %f", self.lastCorrectedHeading);
+        if ([a distanceFromLocation:b] > 0.0f) {
+            debugLog(@"=============================");
+            debugLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
+            debugLog(@"Location A: %@", a);
+            debugLog(@"Location B: %@", b);
+            self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:b];
+            debugLog(@"Heading: %f", self.lastCorrectedHeading);
+            debugLog(@"Closest point: (%f %f)", coord.latitude, coord.longitude);
+            debugLog(@"=============================");
+        }
         if (self.visitedLocations && self.visitedLocations.count > 0) {
             self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
         }
-        debugLog(@"Closest point: (%f %f)", coord.latitude, coord.longitude);
-        debugLog(@"=============================");
     }
     
     return min > maxDistance;
 }
 
-//- (BOOL) isTooFarFromRoute:(CLLocation *)loc maxDistance:(int)maxDistance {
-//    SMTurnInstruction *lastTurn = [self.pastTurnInstructions lastObject];
-//    if (self.turnInstructions.count > 0) {
-//        SMTurnInstruction *prevTurn = lastTurn;
-//        SMTurnInstruction *nextTurn;
-//        @synchronized(self.turnInstructions) {
-//            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:loc.coordinate altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
-//            self.distanceFromRoute = MAXFLOAT;
-//            for (int i = 0; i < MIN([self.turnInstructions count], 2); i++, prevTurn = nextTurn) {
-//                nextTurn = [self.turnInstructions objectAtIndex:i];
-//                
-//                /**
-//                 * Check if we are (significantly) moving away from the start.
-//                 * If you start routing but never pass through the first instruction location
-//                 * the routing will always return false.
-//                 * It will now check against the first route point and recalculate if neccessary
-//                 */
-//                if (i == 0 && !lastTurn) {
-//                    self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:loc andEndLocation:nextTurn.loc];
-//                    if (nextTurn) {
-////                    if (self.visitedLocations && self.visitedLocations.count > 0) {
-////                        CLLocation *firstLoc = [[self.visitedLocations objectAtIndex:0] objectForKey:@"location"];
-////                        double initialDistanceFromStart = [firstLoc distanceFromLocation:nextTurn.loc];
-//                        double currentDistanceFromStart = [loc distanceFromLocation:nextTurn.loc];
-////                        debugLog(@"Initial distance from start: %.6f", initialDistanceFromStart);
-//                        debugLog(@"Current distance from start: %.6f", currentDistanceFromStart);
-//                        return currentDistanceFromStart > /*distanceFromStart +*/ maxDistance;
-////                    }
-//                    }
-//                    return NO;
-//                }
-//                if (![self isTooFarFromRouteSegment:loc from:prevTurn to:nextTurn maxDistance:maxDistance]) {
-//                    for (int k = 0; k < i; k++) {
-//                        [self updateSegment];
-//                    }
-//                    if (approachingTurn) {
-//                        approachingTurn = approachingTurn || i > 0;
-//                    }
-//                    return NO;
-//                }
-//            }
-//            return YES;
-//        }
-//    }
-//    return NO;
-//}
-
+- (BOOL)checkLocation:(CLLocation*)loc withMaxDistance:(CGFloat)maxDistance {
+    SMTurnInstruction *currentTurn = [self.turnInstructions objectAtIndex:0];
+    SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 2)];
+    if (nextTurn) {
+        if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance])  {
+            if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
+                [self updateSegment];
+                approachingTurn = YES;
+            }
+            return NO;
+        }
+    }
+    return YES;
+}
 
 - (BOOL) isTooFarFromRoute:(CLLocation *)loc maxDistance:(int)maxDistance {
+    /**
+     * last turn we passed
+     */
     SMTurnInstruction *lastTurn = [self.pastTurnInstructions lastObject];
     if (self.turnInstructions.count > 0) {
         SMTurnInstruction *currentTurn = [self.turnInstructions objectAtIndex:0];
         @synchronized(self.turnInstructions) {
             self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:loc.coordinate altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
-            
-            /**
-             * Check if we are (significantly) moving away from the start.
-             * If you start routing but never pass through the first instruction location
-             * the routing will always return false.
-             * It will now check against the first route point and recalculate if neccessary
-             */
             if (!lastTurn) {
-                self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:loc andEndLocation:currentTurn.loc];
+                /**
+                 * we have passed no turns. check if we have managed to get on the route somehow
+                 */
+//                if ([currentTurn.loc distanceFromLocation:loc] > 0.0f) {
+//                    self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:loc andEndLocation:currentTurn.loc];
+//                }
                 if (currentTurn) {
                     double currentDistanceFromStart = [loc distanceFromLocation:currentTurn.loc];
                     debugLog(@"Current distance from start: %.6f", currentDistanceFromStart);
                     if (currentDistanceFromStart > maxDistance) {
-                        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 1)];
-                        if (nextTurn) {
-                            if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
-                                if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
-                                    [self updateSegment];
-                                    approachingTurn = YES;
-                                }
-                                return NO;
-                            }                
-                        }
-                        return YES;
+                        return [self checkLocation:loc withMaxDistance:maxDistance];                        
+//                        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 2)];
+//                        if (nextTurn) {
+//                            if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
+//                                if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
+//                                    [self updateSegment];
+//                                    approachingTurn = YES;
+//                                }
+//                                return NO;
+//                            }                
+//                        }
+//                        return YES;
                     }
-//                    return currentDistanceFromStart > /*distanceFromStart +*/ maxDistance;
                 }
                 return NO;
             }
             
             self.distanceFromRoute = MAXFLOAT;
-            SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 1)];
-            if (nextTurn) {
-                if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
-                    if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
-                        [self updateSegment];
-                        approachingTurn = YES;
-                    }
-                    return NO;
-                }                
-            }
-            return YES;
+            return [self checkLocation:loc withMaxDistance:maxDistance];            
+//            SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 2)];
+//            if (nextTurn) {
+//                if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
+//                    if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
+//                        [self updateSegment];
+//                        approachingTurn = YES;
+//                    }
+//                    return NO;
+//                }                
+//            }
+//            return YES;
         }
     }
     return NO;
