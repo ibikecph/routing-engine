@@ -53,6 +53,9 @@
 @property (nonatomic, strong) CLLocation * lastCorrectedLocation;
 @property double lastCorrectedHeading;
 
+@property (nonatomic, strong) NSString * longestStreet;
+@property NSInteger longestDistance;
+
 
 @property NSInteger lastVisitedWaypointIndex;
 

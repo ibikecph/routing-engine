@@ -495,11 +495,29 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 @synchronized(self.turnInstructions) {
                     [self.turnInstructions addObject:instruction];
                 }
+                
+                
             }
 
+            
 //          [route.turnInstructions addObject:[SMTurnInstruction parseInstructionFromJson:obj withRoute:route.waypoints]];
             
         }
+        
+        self.longestDistance = 0.0f;
+        self.longestStreet = @"";
+        self.longestStreet = [[jsonRoot objectForKey:@"route_name"] componentsJoinedByString:@", "];
+        if (self.longestStreet == nil && [[self.longestStreet stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
+            for (int i = 1; i < self.turnInstructions.count - 1; i++) {
+                SMTurnInstruction * inst = [self.turnInstructions objectAtIndex:i];
+                if (inst.lengthInMeters > self.longestDistance) {
+                    self.longestDistance = inst.lengthInMeters;
+                    SMTurnInstruction * inst1 = [self.turnInstructions objectAtIndex: i - 1];
+                    self.longestStreet = inst1.wayName;
+                }
+            }
+        }
+        
     }
 
     self.lastVisitedWaypointIndex = 0;
