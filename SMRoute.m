@@ -675,6 +675,11 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         @synchronized(self.recalcMutex) {
             self.recalculationInProgress = NO;
         }
+        if ([req.auxParam isEqualToString:@"routeRecalc"] && self.delegate) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.delegate serverError];
+            });
+        }
     }
 }
 

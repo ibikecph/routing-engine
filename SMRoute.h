@@ -19,6 +19,7 @@
 - (void) updateRoute;
 - (void) startRoute;
 - (void) routeNotFound;
+- (void) serverError;
 @optional
 - (void) routeRecalculationStarted;
 - (void) routeRecalculationDone;
