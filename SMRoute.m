@@ -113,7 +113,7 @@
 
 - (BOOL)checkLocation:(CLLocation*)loc withMaxDistance:(CGFloat)maxDistance {
     SMTurnInstruction *currentTurn = [self.turnInstructions objectAtIndex:0];
-    SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 2)];
+    SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, MAX_TURNS)];
     if (nextTurn) {
         if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance])  {
             if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
@@ -139,25 +139,11 @@
                 /**
                  * we have passed no turns. check if we have managed to get on the route somehow
                  */
-//                if ([currentTurn.loc distanceFromLocation:loc] > 0.0f) {
-//                    self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:loc andEndLocation:currentTurn.loc];
-//                }
                 if (currentTurn) {
                     double currentDistanceFromStart = [loc distanceFromLocation:currentTurn.loc];
                     debugLog(@"Current distance from start: %.6f", currentDistanceFromStart);
                     if (currentDistanceFromStart > maxDistance) {
                         return [self checkLocation:loc withMaxDistance:maxDistance];                        
-//                        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 2)];
-//                        if (nextTurn) {
-//                            if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
-//                                if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
-//                                    [self updateSegment];
-//                                    approachingTurn = YES;
-//                                }
-//                                return NO;
-//                            }                
-//                        }
-//                        return YES;
                     }
                 }
                 return NO;
@@ -165,17 +151,6 @@
             
             self.distanceFromRoute = MAXFLOAT;
             return [self checkLocation:loc withMaxDistance:maxDistance];            
-//            SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, 2)];
-//            if (nextTurn) {
-//                if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance]) {
-//                    if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
-//                        [self updateSegment];
-//                        approachingTurn = YES;
-//                    }
-//                    return NO;
-//                }                
-//            }
-//            return YES;
         }
     }
     return NO;
@@ -507,7 +482,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.longestDistance = 0.0f;
         self.longestStreet = @"";
         self.longestStreet = [[jsonRoot objectForKey:@"route_name"] componentsJoinedByString:@", "];
-        if (self.longestStreet == nil && [[self.longestStreet stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
+        if (self.longestStreet == nil || [[self.longestStreet stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
             for (int i = 1; i < self.turnInstructions.count - 1; i++) {
                 SMTurnInstruction * inst = [self.turnInstructions objectAtIndex:i];
                 if (inst.lengthInMeters > self.longestDistance) {
