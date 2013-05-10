@@ -439,6 +439,11 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                     instruction.ordinalDirection = @"";
                 }
                 instruction.wayName = (NSString *)[jsonObject objectAtIndex:1];
+                
+                if ([instruction.wayName rangeOfString:@"\\{.+\\:.+\\}" options:NSRegularExpressionSearch].location != NSNotFound) {
+                    instruction.wayName = translateString(instruction.wayName);
+                }
+                
                 instruction.lengthInMeters = prevlengthInMeters;
                 prevlengthInMeters = [(NSNumber *)[jsonObject objectAtIndex:2] intValue];
                 instruction.timeInSeconds = [(NSNumber *)[jsonObject objectAtIndex:4] intValue];
