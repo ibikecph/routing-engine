@@ -52,6 +52,18 @@ typedef enum {
 @property (nonatomic, strong) NSString *fixedLengthWithUnit;
 @property (nonatomic, strong) NSString *directionAbrevation; // N: north, S: south, E: east, W: west, NW: North West, ...
 @property float azimuth;
+
+/**
+ * Indicate type of transport
+ *
+ * 1 - bike
+ * 2 - walking
+ * 3 - ferry
+ * 4 - train
+ */
+@property NSInteger vehicle;
+
+
 @property int waypointsIndex;
 @property (nonatomic, strong) CLLocation *loc;
 

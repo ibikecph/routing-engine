@@ -359,34 +359,34 @@
  * https://developers.google.com/maps/documentation/utilities/polylinealgorithm
  */
 NSMutableArray* decodePolyline (NSString *encodedString) {
-
+    
     const char *bytes = [encodedString UTF8String];
     size_t len = strlen(bytes);
-
+    
     int lat = 0, lng = 0;
-
+    
     NSMutableArray *locations = [NSMutableArray array];
     for (int i = 0; i < len;) {
         for (int k = 0; k < 2; k++) {
-
+            
             uint32_t delta = 0;
             int shift = 0;
-
+            
             unsigned char c;
             do {
                 c = bytes[i++] - 63;
                 delta |= (c & 0x1f) << shift;
                 shift += 5;
             } while (c & 0x20);
-
+            
             delta = (delta & 0x1) ? ((~delta >> 1) | 0x80000000) : (delta >> 1);
             (k == 0) ? (lat += delta) : (lng += delta);
         }
-//      debugLog(@"decodePolyline(): (%d, %d)", lat, lng);
-
+        //      debugLog(@"decodePolyline(): (%d, %d)", lat, lng);
+        
         [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / 1e5) longitude:((double)lng / 1e5)]];
     }
-
+    
     return locations;
 }
 
@@ -395,7 +395,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 //    SMRoute *route = [[SMRoute alloc] init];
     @synchronized(self.waypoints) {
-        self.waypoints = decodePolyline([jsonRoot objectForKey:@"route_geometry"]);
+        self.waypoints = [SMGPSUtil decodePolyline:[jsonRoot objectForKey:@"route_geometry"]];
     }
 
     if (self.waypoints.count < 2)
@@ -456,6 +456,10 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 prevlengthWithUnit = (NSString *)[jsonObject objectAtIndex:5];
                 instruction.directionAbrevation = (NSString *)[jsonObject objectAtIndex:6];
                 instruction.azimuth = [(NSNumber *)[jsonObject objectAtIndex:7] floatValue];
+                instruction.vehicle = 0;
+                if ([jsonObject count] > 8) {
+                    instruction.vehicle = [(NSNumber *)[jsonObject objectAtIndex:8] intValue];
+                }
                 
                 if (isFirst) {
                     [instruction generateStartDescriptionString];

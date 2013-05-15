@@ -22,5 +22,10 @@ CLLocationCoordinate2D closestCoordinate(CLLocationCoordinate2D C, CLLocationCoo
 BOOL sameCoordinates(CLLocation *loc1, CLLocation *loc2);
 + (double) bearingBetweenStartLocation:(CLLocation *)startLocation andEndLocation:(CLLocation *)endLocation;
 
+/*
+ * Decoder for the Encoded Polyline Algorithm Format
+ * https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+ */
++ (NSMutableArray*)decodePolyline:(NSString *)encodedString;
 
 @end
