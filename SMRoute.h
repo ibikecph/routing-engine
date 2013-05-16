@@ -66,7 +66,7 @@
 - (CLLocation *) getEndLocation;
 - (CLLocation *) getFirstVisitedLocation;
 - (CLLocation *) getLastVisitedLocation;
-- (NSData*) save;
+- (NSDictionary*) save;
 
 - (CGFloat)calculateDistanceTraveled;
 - (CGFloat)calculateAverageSpeed;

@@ -538,10 +538,10 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     }
 }
 
-- (NSData*) save {
+- (NSDictionary*) save {
     // TODO save visited locations and posibly some other info
     debugLog(@"Saving route");
-    return [NSKeyedArchiver archivedDataWithRootObject:self.visitedLocations];
+    return @{@"data" : [NSKeyedArchiver archivedDataWithRootObject:self.visitedLocations], @"polyline" : @"xxx"};
 }
 
 /*
