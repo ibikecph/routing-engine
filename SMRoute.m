@@ -490,7 +490,11 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         
         self.longestDistance = 0.0f;
         self.longestStreet = @"";
-        self.longestStreet = [[jsonRoot objectForKey:@"route_name"] componentsJoinedByString:@", "];
+        
+        if ([[jsonRoot objectForKey:@"route_name"] isKindOfClass:[NSArray class]] && [[jsonRoot objectForKey:@"route_name"] count] > 0) {
+            self.longestStreet = [[jsonRoot objectForKey:@"route_name"] objectAtIndex:0];
+        }
+//        self.longestStreet = [[jsonRoot objectForKey:@"route_name"] componentsJoinedByString:@", "];
         if (self.longestStreet == nil || [[self.longestStreet stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
             for (int i = 1; i < self.turnInstructions.count - 1; i++) {
                 SMTurnInstruction * inst = [self.turnInstructions objectAtIndex:i];
@@ -501,6 +505,11 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 }
             }
         }
+        
+        if ([self.longestStreet rangeOfString:@"\\{.+\\:.+\\}" options:NSRegularExpressionSearch].location != NSNotFound) {
+            self.longestStreet = translateString(self.longestStreet);
+        }
+        
         
     }
 
