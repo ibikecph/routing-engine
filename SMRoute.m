@@ -120,9 +120,11 @@
                 [self updateSegment];
                 approachingTurn = YES;
             }
+            self.snapArrow = YES;
             return NO;
         }
     }
+    self.snapArrow = NO;
     return YES;
 }
 
@@ -514,6 +516,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     }
 
     self.lastVisitedWaypointIndex = 0;
+    self.snapArrow = NO;
     return YES;
 }
 
@@ -748,5 +751,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     }
 }
 
+- (BOOL)isOnPath {
+    return self.snapArrow;
+}
 
 @end

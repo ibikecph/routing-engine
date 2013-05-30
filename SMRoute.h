@@ -20,6 +20,7 @@
 - (void) startRoute;
 - (void) routeNotFound;
 - (void) serverError;
+
 @optional
 - (void) routeRecalculationStarted;
 - (void) routeRecalculationDone;
@@ -60,6 +61,8 @@
 
 @property NSInteger lastVisitedWaypointIndex;
 
+@property BOOL snapArrow;
+
 
 - (void) visitLocation:(CLLocation *)loc;
 - (CLLocation *) getStartLocation;
@@ -78,5 +81,5 @@
 - (void) recalculateRoute:(CLLocation *)loc;
 
 - (double)getCorrectedHeading;
-
+- (BOOL) isOnPath;
 @end
