@@ -36,6 +36,7 @@
         self.recalculationInProgress = NO;
         self.lastRecalcLocation = [[CLLocation alloc] initWithLatitude:0 longitude:0];
         self.recalcMutex = [NSObject new];
+        self.osrmServer = OSRM_SERVER;
     }
     return self;
 }
@@ -53,6 +54,7 @@
         if (routeJSON == nil) {
             SMRequestOSRM * r = [[SMRequestOSRM alloc] initWithDelegate:self];
             [self setRequest:r];
+            [r setOsrmServer:self.osrmServer];
             [r setAuxParam:@"startRoute"];
             [r getRouteFrom:start to:end via:nil];
         } else {
@@ -194,6 +196,7 @@
     
     SMRequestOSRM  * r = [[SMRequestOSRM alloc] initWithDelegate:self];
     [self setRequest:r];
+    [r setOsrmServer:self.osrmServer];
     [r setAuxParam:@"routeRecalc"];
     
     // Uncomment code below if previous part of the route needs to be displayed.

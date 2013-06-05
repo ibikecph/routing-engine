@@ -63,6 +63,7 @@
 
 @property BOOL snapArrow;
 
+@property (nonatomic, strong) NSString * osrmServer;
 
 - (void) visitLocation:(CLLocation *)loc;
 - (CLLocation *) getStartLocation;
