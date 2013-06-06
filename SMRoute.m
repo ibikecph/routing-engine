@@ -172,6 +172,8 @@
         }
     }
     
+    self.snapArrow = NO;
+    
     CGFloat distance = [loc distanceFromLocation:self.lastRecalcLocation];
     if (distance < MIN_DISTANCE_FOR_RECALCULATION) {
         return;
@@ -680,6 +682,10 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             });
         }
     }
+}
+
+- (void)serverNotReachable {
+    
 }
 
 - (void)request:(SMRequestOSRM *)req finishedWithResult:(id)res {
