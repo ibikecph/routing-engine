@@ -67,7 +67,7 @@
 - (BOOL) isTooFarFromRouteSegment:(CLLocation *)loc from:(SMTurnInstruction *)turnA to:(SMTurnInstruction *)turnB maxDistance:(double)maxDistance {
     double min = MAXFLOAT;
 
-    for (int i = self.lastVisitedWaypointIndex; i < turnB.waypointsIndex; i++) {
+    for (int i = MAX(self.lastVisitedWaypointIndex, 0); i < turnB.waypointsIndex; i++) {
         CLLocation *a = [self.waypoints objectAtIndex:i];
         CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
         double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
@@ -520,7 +520,12 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         
     }
 
-    self.lastVisitedWaypointIndex = 0;
+    self.lastVisitedWaypointIndex = -1;
+    
+    CLLocation *a = [self.waypoints objectAtIndex:0];
+    CLLocation *b = [self.waypoints objectAtIndex:1];
+    self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:b];
+
     self.snapArrow = NO;
     return YES;
 }
