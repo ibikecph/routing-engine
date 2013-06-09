@@ -306,12 +306,8 @@
 
             approachingTurn = NO;
 
-//            if (loc.course >= 0.0 && fabs(loc.course - nextTurn.azimuth) > 20.0) {
-//                debugLog(@"Missed turn!");
-//            } else {
-                debugLog(@"Past turn: %@", nextTurn.wayName);
-                [self updateSegment];
-//            }
+            debugLog(@"Past turn: %@", nextTurn.wayName);
+            [self updateSegment];
         }
     } else if (!approachingTurn) {
         for (int i = 0; i < self.turnInstructions.count; i++) {
@@ -395,6 +391,42 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     }
     
     return locations;
+}
+
++ (NSString *)encodePolyline:(NSArray *)coordinates
+{
+    NSMutableString *encodedString = [NSMutableString string];
+    int val = 0;
+    int value = 0;
+    CLLocationCoordinate2D prevCoordinate = CLLocationCoordinate2DMake(0, 0);
+    
+    for (NSDictionary *coordinateValue in coordinates) {
+        CLLocationCoordinate2D coordinate = ((CLLocation*)[coordinateValue objectForKey:@"location"]).coordinate;
+        
+        // Encode latitude
+        val = round((coordinate.latitude - prevCoordinate.latitude) * 1e5);
+        val = (val < 0) ? ~(val<<1) : (val <<1);
+        while (val >= 0x20) {
+            int value = (0x20|(val & 31)) + 63;
+            [encodedString appendFormat:@"%c", value];
+            val >>= 5;
+        }
+        [encodedString appendFormat:@"%c", val + 63];
+        
+        // Encode longitude
+        val = round((coordinate.longitude - prevCoordinate.longitude) * 1e5);
+        val = (val < 0) ? ~(val<<1) : (val <<1);
+        while (val >= 0x20) {
+            value = (0x20|(val & 31)) + 63;
+            [encodedString appendFormat:@"%c", value];
+            val >>= 5;
+        }
+        [encodedString appendFormat:@"%c", val + 63];
+        
+        prevCoordinate = coordinate;
+    }
+    
+    return encodedString;
 }
 
 - (BOOL) parseFromJson:(NSDictionary *)jsonRoot delegate:(id<SMRouteDelegate>) dlg {
@@ -563,7 +595,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 - (NSDictionary*) save {
     // TODO save visited locations and posibly some other info
     debugLog(@"Saving route");
-    return @{@"data" : [NSKeyedArchiver archivedDataWithRootObject:self.visitedLocations], @"polyline" : @"xxx"};
+    return @{@"data" : [NSKeyedArchiver archivedDataWithRootObject:self.visitedLocations], @"polyline" : [SMRoute encodePolyline:self.visitedLocations]};
 }
 
 /*
