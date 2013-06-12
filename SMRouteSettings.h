@@ -18,7 +18,7 @@
 @property (nonatomic, strong) NSString*  osrm_server;
 @property (nonatomic, strong) NSString*  osrm_server_cargo;
 
-@property (nonatomic, assign) NSNumber*  geocoding_search_radius; //float
+@property (nonatomic, strong) NSNumber*  geocoding_search_radius; //float
 
 @property (nonatomic, strong) NSString*  places_search_radius;
 @property (nonatomic, strong) NSString*  foursquare_search_radius;
@@ -26,7 +26,7 @@
 @property (nonatomic, strong) NSString*  oiorest_search_radius;
 @property (nonatomic, strong) NSString*  oiorest_autocomplete_search_radius;
 
-@property (nonatomic, assign) NSNumber*  use_apple_geocoder; //BOOL
+@property (nonatomic, strong) NSNumber*  use_apple_geocoder; //BOOL
 
 //@property (nonatomic, strong) NSString*  google_analytics_key;
 //@property (nonatomic, strong) NSString*  google_api_key;
