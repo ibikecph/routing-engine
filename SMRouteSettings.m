@@ -8,33 +8,6 @@
 
 #import "SMRouteSettings.h"
 
-
-//#define OSRM_ADDRESS @"routes.ibikecph.dk"
-//#define OSRM_SERVER @"http://routes.ibikecph.dk"
-//#define OSRM_SERVER_CARGO @"http://routes.ibikecph.dk/cargobike"
-//
-//#define GEOCODING_SEARCH_RADIUS 50000.0f
-//
-//#define PLACES_SEARCH_RADIUS @"20000"
-//#define FOURSQUARE_SEARCH_RADIUS @"20000"
-//#define PLACES_LANGUAGE @"da"
-//#define OIOREST_SEARCH_RADIUS @"50"
-//#define OIOREST_AUTOCOMPLETE_SEARCH_RADIUS @"20000"
-//
-//#define USE_APPLE_GEOCODER YES
-//
-////from keys.h
-//#define GOOGLE_ANALYTICS_KEY @"UA-32719126-2"
-//#define GOOGLE_API_KEY @"AIzaSyAZwBZgYS-61R-gIvp4GtnekJGGrIKh0Dk"
-//
-//#define FOURSQUARE_ID @"AFXG5WVI4UTINRGVJZ52ZAWRK454EN4J3FZRJB03J4ZMXQX1"
-//#define FOURSQUARE_SECRET @"D2EU4WKSQ2WHQGOK4FJVNRDZUJ4S4YTZVBO1FM4V03NRJWYK"
-//
-//#define HOCKEYAPP_BETA_IDENTIFIER @"1817c1e050c09560ff329120cc64b2f8"
-//#define HOCKEYAPP_LIVE_IDENTIFIER @"1817c1e050c09560ff329120cc64b2f8"
-//
-//#define FB_APP_ID @"478150322233312"
-
 static NSLock * _sharingLock;
 
 @implementation SMRouteSettings
@@ -55,20 +28,42 @@ static NSLock * _sharingLock;
     self.use_apple_geocoder = [NSNumber numberWithBool:YES];
     
     //keys
-    self.google_analytics_key = nil;
-    self.google_api_key = nil;
+//    self.google_analytics_key = nil;
+//    self.google_api_key = nil;
     self.foursquare_id = nil;
     self.foursquare_secret = nil;
-    self.hockeyapp_beta_identifier = nil;
-    self.hockeyapp_live_identifier = nil;
-    self.fb_app_id = nil;
+//    self.hockeyapp_beta_identifier = nil;
+//    self.hockeyapp_live_identifier = nil;
+//    self.fb_app_id = nil;
 }
 
 -(void)loadFromDefaultPlist{
     [self defaultInitialization];
     
-    NSString * filePath = [[NSBundle mainBundle] pathForResource:DEFAULT_ROUTESETTINGS_FILENAME ofType:@"plist"];
-    if(!filePath) return;
+    [self loadSettingsFromBundlePlist:DEFAULT_ROUTESETTINGS_FILENAME];
+    [self loadSettingsFromBundlePlist:[DEFAULT_ROUTESETTINGS_FILENAME stringByAppendingString:DEFAULT_PRIVATE_SUFIX]];
+    
+//    NSString * filePath = [[NSBundle mainBundle] pathForResource:DEFAULT_ROUTESETTINGS_FILENAME ofType:@"plist"];
+//    if(!filePath) return;
+//    
+//    NSDictionary * dict = [NSDictionary dictionaryWithContentsOfFile:filePath];
+//    
+//    NSString * lwKey;
+//    for(NSString * keyStr in dict.allKeys){
+//        lwKey = [keyStr lowercaseString];
+//        //check if getter exist (that should be sufficient for this class)
+//        if([self respondsToSelector:NSSelectorFromString(lwKey)]){
+//            [self setValue:[dict valueForKey:keyStr] forKey:lwKey];
+//        }
+//    }
+//    
+//    filePath = [[NSBundle mainBundle] pathForResource:DEFAULT_ROUTESETTINGS_FILENAME ofType:@"plist"];
+//    if(!filePath) return;
+}
+
+-(BOOL) loadSettingsFromBundlePlist:(NSString*)fileName{
+    NSString * filePath = [[NSBundle mainBundle] pathForResource:fileName ofType:@"plist"];
+    if(!filePath) return NO;
     
     NSDictionary * dict = [NSDictionary dictionaryWithContentsOfFile:filePath];
     
@@ -80,6 +75,8 @@ static NSLock * _sharingLock;
             [self setValue:[dict valueForKey:keyStr] forKey:lwKey];
         }
     }
+    
+    return YES;
 }
 
 +(void)initialize{

@@ -40,7 +40,7 @@ typedef enum {
 - (void)getAutocomplete:(NSString*)str {
     self.srchString = str;
     self.resultsArr = [NSMutableArray array];
-//    [self getFoursquareAutocomplete];
+    [self getFoursquareAutocomplete];
 //    [self getOiorestAutocomplete];
     [self getKortforsyningenAutocomplete];
 }

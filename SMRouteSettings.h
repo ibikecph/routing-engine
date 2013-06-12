@@ -10,6 +10,7 @@
 
 
 #define DEFAULT_ROUTESETTINGS_FILENAME @"smroute_settings"
+#define DEFAULT_PRIVATE_SUFIX @"_private"
 
 @interface SMRouteSettings : NSObject
 
@@ -27,13 +28,13 @@
 
 @property (nonatomic, assign) NSNumber*  use_apple_geocoder; //BOOL
 
-@property (nonatomic, strong) NSString*  google_analytics_key;
-@property (nonatomic, strong) NSString*  google_api_key;
+//@property (nonatomic, strong) NSString*  google_analytics_key;
+//@property (nonatomic, strong) NSString*  google_api_key;
 @property (nonatomic, strong) NSString*  foursquare_id;
 @property (nonatomic, strong) NSString*  foursquare_secret;
-@property (nonatomic, strong) NSString*  hockeyapp_beta_identifier;
-@property (nonatomic, strong) NSString*  hockeyapp_live_identifier;
-@property (nonatomic, strong) NSString*  fb_app_id;
+//@property (nonatomic, strong) NSString*  hockeyapp_beta_identifier;
+//@property (nonatomic, strong) NSString*  hockeyapp_live_identifier;
+//@property (nonatomic, strong) NSString*  fb_app_id;
 
 +(SMRouteSettings*)sharedInstance;
 @end
