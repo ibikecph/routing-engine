@@ -7,6 +7,7 @@
 //
 
 #import "SMRouteUtils.h"
+#import "NSString+Relevance.h"
 
 @implementation SMRouteUtils
 
@@ -122,6 +123,63 @@ float caloriesBurned(float avgSpeed, float timeSpent){
     }
     
     return roundf(calBurned);
+}
+
+
++ (NSString*)routeFilenameFromTimestampForExtension:(NSString*) ext {
+    double tmpd = [[NSDate date] timeIntervalSince1970];
+    NSString* path = nil;
+    // CHECK IF FILE WITH NEW CURRENT DATE EXISTS
+    for (;;){
+        path = [[[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"routes"] stringByAppendingPathComponent: [NSString stringWithFormat:@"%f.%@", tmpd, ext]];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:path])	//Does file already exist?
+        {
+            // IF YES INC BY 1 millisecond
+            tmpd+=0.000001;
+        }else{
+            break;
+        }
+    }
+    [[NSFileManager defaultManager] createDirectoryAtPath:[[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"routes"] withIntermediateDirectories:YES attributes:@{} error:nil];
+    return path;
+}
+
++ (NSInteger)pointsForName:(NSString*)name andAddress:(NSString*)address andTerms:(NSString*)srchString {
+    NSMutableArray * terms = [NSMutableArray array];
+    srchString = [srchString stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    for (NSString * str in [srchString componentsSeparatedByString:@" "]) {
+        if ([terms indexOfObject:str] == NSNotFound) {
+            [terms addObject:str];
+        }
+    }
+    NSInteger total = 0;
+    
+    NSInteger points = [name numberOfOccurenciesOfString:srchString];
+    if (points > 0) {
+        total += points * POINTS_EXACT_NAME;
+    } else {
+        for (NSString * str in terms) {
+            points = [name numberOfOccurenciesOfString:str];
+            if (points > 0) {
+                total += points * POINTS_PART_NAME;
+            }
+        }
+    }
+    
+    
+    points = [address numberOfOccurenciesOfString:srchString];
+    if (points > 0) {
+        total += points * POINTS_EXACT_ADDRESS;
+    } else {
+        for (NSString * str in terms) {
+            points = [address numberOfOccurenciesOfString:str];
+            if (points > 0) {
+                total += points * POINTS_PART_NAME;
+            }
+        }
+    }
+    
+    return total;
 }
 
 

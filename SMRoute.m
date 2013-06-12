@@ -9,7 +9,8 @@
 #import "SMLocationManager.h"
 #import "SMRoute.h"
 #import "SMGPSUtil.h"
-#import "SMUtil.h"
+//#import "SMUtil.h"
+#import "SMRouteUtils.h"
 
 #define MAX_DISTANCE_FROM_PATH 20 // in meters
 

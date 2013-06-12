@@ -9,7 +9,9 @@
 #import "SMAutocomplete.h"
 #import "SMLocationManager.h"
 #import "NSString+Relevance.h"
-#import "SMUtil.h"
+#import "NSString+URLEncode.h"
+#import "SMRouteUtils.h"
+#import "SMRouteConsts.h"
 
 typedef enum {
     autocompleteOiorest,
@@ -67,7 +69,7 @@ typedef enum {
                      @"country" : @"",
                      @"source" : @"autocomplete",
                      @"subsource" : @"oiorest",
-                     @"relevance" : [NSNumber numberWithInteger:[SMUtil pointsForName:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]] andAddress:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]] andTerms:self.srchString]],
+                     @"relevance" : [NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]] andAddress:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]] andTerms:self.srchString]],
                      @"order" : @2
                      }];
                 }
@@ -155,7 +157,7 @@ typedef enum {
                         
                         [dict setObject:[ar componentsJoinedByString:@", "] forKey:@"address"];
                         
-                        [dict setObject:[NSNumber numberWithInteger:[SMUtil pointsForName:[dict objectForKey:@"name"] andAddress:[dict objectForKey:@"address"] andTerms:self.srchString]] forKey:@"relevance"];
+                        [dict setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[dict objectForKey:@"name"] andAddress:[dict objectForKey:@"address"] andTerms:self.srchString]] forKey:@"relevance"];
                         
                         if ([[dict objectForKey:@"address"] rangeOfString:@"København"].location != NSNotFound
                             || [[dict objectForKey:@"address"] rangeOfString:@"Koebenhavn"].location != NSNotFound
@@ -271,7 +273,7 @@ typedef enum {
 //                            [val setObject:[geometryInfo objectForKey:@"y"] forKey:@"lat"];
                             [val setObject:[info objectForKey:zipKey] forKey:@"zip"];
                             [val setObject:[distanceInfo objectForKey:distanceKey] forKey:@"distance"];
-                            [val setObject:[NSNumber numberWithInteger:[SMUtil pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
+                            [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
                                                                                               municipalityCode,
                                                                                               municipalityName] andAddress:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
                                                                                                                             municipalityCode,

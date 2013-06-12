@@ -12,6 +12,7 @@
 #import <AddressBook/AddressBook.h>
 #import <AddressBookUI/AddressBookUI.h>
 #import "SMLocationManager.h"
+#import "NSString+URLEncode.h"
 
 
 @implementation SMGeocoder
