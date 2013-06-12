@@ -35,6 +35,8 @@
 //
 //#define FB_APP_ID @"478150322233312"
 
+static NSLock * _sharingLock;
+
 @implementation SMRouteSettings
 
 
@@ -78,16 +80,21 @@
             [self setValue:[dict valueForKey:keyStr] forKey:lwKey];
         }
     }
-    
-    bool test = true;
+}
+
++(void)initialize{
+    _sharingLock = [NSLock new];
 }
 
 +(SMRouteSettings*)sharedInstance{
     static SMRouteSettings * _shared_instance = nil;
+    
+    [_sharingLock lock];
     if(!_shared_instance){
         _shared_instance = [SMRouteSettings new];
         [_shared_instance loadFromDefaultPlist];
     }
+    [_sharingLock unlock];
     
     return _shared_instance;
 }
