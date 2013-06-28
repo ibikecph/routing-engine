@@ -57,6 +57,7 @@
 //from keys.h
 #define FOURSQUARE_ID [SMRouteSettings sharedInstance].foursquare_id
 #define FOURSQUARE_SECRET [SMRouteSettings sharedInstance].foursquare_secret
+#define KOMMUNE_KODE @"0101"
 
 
 

@@ -509,6 +509,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 }
                 [instruction generateFullDescriptionString];
                 
+                [instruction generateShortDescriptionString];
+                
                 int position = [(NSNumber *)[jsonObject objectAtIndex:3] intValue];
                 instruction.waypointsIndex = position;
                 //          instruction->waypoints = route;

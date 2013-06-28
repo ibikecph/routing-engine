@@ -9,6 +9,11 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
+#define kVehicleBike 1
+#define kVehicleWalk 2
+#define kVehicleFerry 3
+#define kVehicleTrain 4
+
 typedef enum {
     NoTurn = 0, //Give no instruction at all
     GoStraight = 1,
@@ -67,6 +72,7 @@ typedef enum {
 @property int waypointsIndex;
 @property (nonatomic, strong) CLLocation *loc;
 
+@property (nonatomic, strong) NSString * shortDescriptionString;
 @property (nonatomic, strong) NSString * descriptionString;
 @property (nonatomic, strong) NSString * fullDescriptionString;
 
@@ -83,5 +89,6 @@ typedef enum {
 - (void)generateDescriptionString;
 - (void)generateStartDescriptionString;
 - (void)generateFullDescriptionString;
+- (void)generateShortDescriptionString;
 
 @end

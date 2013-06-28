@@ -64,7 +64,8 @@ NSString *iconsLarge[] = {
 
 // Returns full direction names for abbreviations N NE E SE S SW W NW
 NSString *directionString(NSString *abbreviation) {
-    return translateString([@"direction_" stringByAppendingString:abbreviation]);
+    NSString * s = translateString([@"direction_" stringByAppendingString:abbreviation]);
+    return s;
 }
 
 // Returns only string representation of the driving direction
@@ -72,12 +73,28 @@ NSString *directionString(NSString *abbreviation) {
     NSString *key = [@"direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
     NSString *desc = [NSString stringWithFormat:translateString(key), translateString([@"direction_number_" stringByAppendingString:self.ordinalDirection])];
     self.descriptionString = desc;
+    if (self.vehicle > kVehicleBike) {
+        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
+        self.descriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.descriptionString];
+    }
 }
 
 - (void)generateStartDescriptionString {
     NSString *key = [@"first_direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
     NSString *desc = [NSString stringWithFormat:translateString(key), translateString([@"direction_" stringByAppendingString:self.directionAbrevation]), translateString([@"direction_number_" stringByAppendingString:self.ordinalDirection])];
     self.descriptionString = desc;
+    if (self.vehicle > kVehicleBike) {
+        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
+        self.descriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.descriptionString];
+    }
+}
+
+- (void)generateShortDescriptionString {
+    self.shortDescriptionString = self.wayName;
+    if (self.vehicle > kVehicleBike) {
+        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
+        self.shortDescriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.shortDescriptionString];
+    }
 }
 
 
@@ -90,6 +107,11 @@ NSString *directionString(NSString *abbreviation) {
         return;
     }
     self.fullDescriptionString = [NSString stringWithFormat:@"%@", translateString(key)];
+    
+    if (self.vehicle > kVehicleBike) {
+        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
+        self.fullDescriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.fullDescriptionString];
+    }
 }
 
 - (UIImage *)smallDirectionIcon {

@@ -209,14 +209,16 @@ typedef enum {
     NSString* zipKey= @"kode";
     NSString* distanceKey= @"afstand";
     NSString* codeKey= @"kode";
-    NSString* municipalityKey= @"kommune";
+    NSString* municipalityKey= @"postdistrikt";
 
     completeType= autocompleteKortforsyningen;
 
-    if ([SMLocationManager instance].hasValidLocation) {
-        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=RestGeokeys&method=adresse&vejnavn=%@*&husnr=1&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=nikolamarkovic&password=spoiledmilk",
-            [self.srchString urlEncode], [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-        
+    if ([SMLocationManager instance].hasValidLocation) {        
+//        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=RestGeokeys&method=adresse&vejnavn=*%@*&husnr=1&georef=EPSG:4326&outgeoref=EPSG:4326&login=nikolamarkovic&password=spoiledmilk",
+//                               [self.srchString urlEncode]] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=RestGeokeys&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&komkode=%@",
+            [self.srchString urlEncode], [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password, KOMMUNE_KODE] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+        debugLog(@"%@", URLString);
         NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
         [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse* response, NSData* data, NSError* error){
 
@@ -242,23 +244,44 @@ typedef enum {
                                                          @"order" : @2
                                                          }];
                             
-                            NSDictionary* geometryInfo= [feature objectForKey:@"geometry"];
+//                            NSDictionary* geometryInfo= [feature objectForKey:@"geometry"];
+//                            NSDictionary* attributes=[feature objectForKey:@"attributes"];
+//                            NSDictionary* municipalityInfo= [attributes objectForKey:municipalityKey];
+//                            NSDictionary* distanceInfo= [attributes objectForKey:distanceKey];
+//                            NSDictionary* info= [attributes objectForKey:@"vej"];
+//                            
+//                            NSString* streetName= [info objectForKey:nameKey];
+//                            if(!streetName)
+//                                continue;
+//                            
+//                            NSString* municipalityName= [municipalityInfo objectForKey:nameKey];
+//                                if(!municipalityName)
+//                                    municipalityName= @"";
+//                            
+//                            NSString* municipalityCode= [municipalityInfo objectForKey:codeKey];
+//                                if(municipalityCode)
+//                                    municipalityCode= @"";
+
+                            
+//                            NSDictionary* geometryInfo= [feature objectForKey:@"geometry"];
                             NSDictionary* attributes=[feature objectForKey:@"attributes"];
                             NSDictionary* municipalityInfo= [attributes objectForKey:municipalityKey];
-                            NSDictionary* distanceInfo= [attributes objectForKey:distanceKey];
-                            NSDictionary* info= [attributes objectForKey:@"vej"];
+//                            NSDictionary* distanceInfo= [attributes objectForKey:distanceKey];
                             
-                            NSString* streetName= [info objectForKey:nameKey];
+                            NSString* streetName= [attributes objectForKey:nameKey];
                             if(!streetName)
                                 continue;
                             
                             NSString* municipalityName= [municipalityInfo objectForKey:nameKey];
-                                if(!municipalityName)
-                                    municipalityName= @"";
+                            if (!municipalityName) {
+                                municipalityName= @"";
+                            }
                             
                             NSString* municipalityCode= [municipalityInfo objectForKey:codeKey];
-                                if(municipalityCode)
-                                    municipalityCode= @"";
+                            if (!municipalityCode) {
+                                municipalityCode= @"";
+                            }
+
                             
                             [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
                                                                                             municipalityCode,
@@ -271,8 +294,14 @@ typedef enum {
                             [val setObject:streetName forKey:@"street"];
 //                            [val setObject:[geometryInfo objectForKey:@"x"] forKey:@"lng"];
 //                            [val setObject:[geometryInfo objectForKey:@"y"] forKey:@"lat"];
-                            [val setObject:[info objectForKey:zipKey] forKey:@"zip"];
-                            [val setObject:[distanceInfo objectForKey:distanceKey] forKey:@"distance"];
+                            [val setObject:municipalityCode forKey:@"zip"];
+                            double distance = 0;
+//                            if ([distanceInfo objectForKey:distanceKey]) {
+//                                distance = [[distanceInfo objectForKey:distanceKey] doubleValue];
+//                            } else {
+//                                distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[geometryInfo objectForKey:@"y"] doubleValue] longitude:[[geometryInfo objectForKey:@"y"] doubleValue]]];
+//                            }
+                            [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
                             [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
                                                                                               municipalityCode,
                                                                                               municipalityName] andAddress:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
