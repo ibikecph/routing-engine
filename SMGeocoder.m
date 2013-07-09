@@ -63,10 +63,10 @@
         NSMutableArray * ret = [NSMutableArray array];
         for (CLPlacemark * pl in placemarks) {
             if ([SMLocationManager instance].hasValidLocation) {
-                float searchRadius= GEOCODING_SEARCH_RADIUS;
-                if ([pl.location distanceFromLocation:[SMLocationManager instance].lastValidLocation] <= searchRadius) {
+//                float searchRadius = GEOCODING_SEARCH_RADIUS;
+//                if ([pl.location distanceFromLocation:[SMLocationManager instance].lastValidLocation] <= searchRadius) {
                     [ret addObject:[[MKPlacemark alloc] initWithPlacemark:pl]];
-                }
+//                }
             } else {
                 [ret addObject:[[MKPlacemark alloc] initWithPlacemark:pl]];
             }
