@@ -216,10 +216,11 @@ typedef enum {
     completeType= autocompleteKortforsyningen;
 
     if ([SMLocationManager instance].hasValidLocation) {        
-//        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=RestGeokeys&method=adresse&vejnavn=*%@*&husnr=1&georef=EPSG:4326&outgeoref=EPSG:4326&login=nikolamarkovic&password=spoiledmilk",
-//                               [self.srchString urlEncode]] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+//        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"( )+" options:NSRegularExpressionCaseInsensitive error:NULL];
+//        NSString *srchstring = [regex stringByReplacingMatchesInString:self.srchString options:0 range:NSMakeRange(0, [self.srchString length]) withTemplate:@","];
+        
         NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=RestGeokeys&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@",
-            [self.srchString urlEncode], [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+            self.srchString, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
         debugLog(@"%@", URLString);
         NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
         [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse* response, NSData* data, NSError* error){
@@ -301,7 +302,11 @@ typedef enum {
 //                            if ([distanceInfo objectForKey:distanceKey]) {
 //                                distance = [[distanceInfo objectForKey:distanceKey] doubleValue];
 //                            } else {
-                                distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[geometryInfo objectForKey:geometryX] doubleValue] longitude:[[geometryInfo objectForKey:geometryY] doubleValue]]];
+                            if ([[SMLocationManager instance] hasValidLocation]) {
+                                CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectForKey:geometryY] doubleValue] longitude:[[geometryInfo objectForKey:geometryX] doubleValue]];
+                                distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
+                                
+                            }
 //                            }
                             [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
                             [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
