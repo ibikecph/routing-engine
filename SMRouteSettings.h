@@ -22,6 +22,7 @@
 
 @property (nonatomic, strong) NSString*  places_search_radius;
 @property (nonatomic, strong) NSString*  foursquare_search_radius;
+@property (nonatomic, assign) int  kort_search_radius;
 @property (nonatomic, strong) NSString*  places_language;
 @property (nonatomic, strong) NSString*  oiorest_search_radius;
 @property (nonatomic, strong) NSString*  oiorest_autocomplete_search_radius;

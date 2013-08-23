@@ -44,12 +44,13 @@ typedef enum {
 //    __weak NSArray *waypoints;
 }
 
-@property TurnDirection drivingDirection;
+@property (nonatomic, assign)TurnDirection drivingDirection;
 @property (nonatomic, strong) NSString *ordinalDirection;
 @property (nonatomic, strong) NSString *wayName;
 @property int lengthInMeters;
 @property int timeInSeconds;
 @property (nonatomic, strong) NSString *lengthWithUnit;
+@property(nonatomic, strong) NSString* smallImageName;
 /**
  * Length to next turn in units (km or m)
  * This value will not auto update

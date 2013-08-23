@@ -100,8 +100,9 @@
 
 
 + (void)oiorestReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
-    NSString * s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f,%@.json", coord.latitude, coord.longitude, OIOREST_SEARCH_RADIUS];
-    NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+    NSString* s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f,%@.json", coord.latitude, coord.longitude, OIOREST_SEARCH_RADIUS];
+    NSURLRequest* req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+    
     [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
         if (error) {
             handler(@{}, error);
@@ -115,11 +116,11 @@
                 if ([res isKindOfClass:[NSArray class]] == NO) {
                     res = @[res];
                 }
-                NSMutableArray * arr = [NSMutableArray array];
-                NSString * title = @"";
-                NSString * subtitle = @"";
+                NSMutableArray* arr = [NSMutableArray array];
+                NSString* title = @"";
+                NSString* subtitle = @"";
                 if ([(NSArray*)res count] > 0) {
-                    NSDictionary * d = [res objectAtIndex:0];
+                    NSDictionary* d = [res objectAtIndex:0];
                     title = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"]];
                     subtitle = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]];
                 }
@@ -140,11 +141,7 @@
 }
 
 + (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
-//    if (USE_APPLE_GEOCODER) {
-//        [SMGeocoder appleReverseGeocode:coord completionHandler:handler];
-//    } else {
-        [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
-//    }
+    [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
 }
 
 @end

@@ -30,12 +30,19 @@
 @property CLLocationCoordinate2D originalEnd;
 @end
 
+static dispatch_queue_t reachabilityQueue;
+
 @implementation SMRequestOSRM
 
 #define DEFAULT_Z 18
 #define MINIMUM_Z 10
 
 - (id)initWithDelegate:(id<SMRequestOSRMDelegate>)dlg {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        reachabilityQueue= dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0L);
+    });
+    
     self = [super init];
     if (self) {
         [self setDelegate:dlg];
@@ -64,23 +71,23 @@
 }
 
 - (void)findNearestPointForLocation:(CLLocation*)loc {
-    if ([self serverReachable] == NO) {
-        return;
-    }
-    self.currentRequest = @"findNearestPointForLocation:";
-    self.coord = loc;
-    NSString * s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, loc.coordinate.latitude, loc.coordinate.longitude];
-    NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
-    if (self.conn) {
-        [self.conn cancel];
-        self.conn = nil;
-    }
-    self.responseData = [NSMutableData data];
-    NSURLConnection * c = [[NSURLConnection alloc] initWithRequest:req delegate:self startImmediately:NO];
-    self.conn = c;
-    [self.conn start];
-}
+    [self runBlockIfServerReachable:^{
+        self.currentRequest = @"findNearestPointForLocation:";
+        self.coord = loc;
+        NSString * s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, loc.coordinate.latitude, loc.coordinate.longitude];
+        NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+        if (self.conn) {
+            [self.conn cancel];
+            self.conn = nil;
+        }
+        self.responseData = [NSMutableData data];
+        NSURLConnection * c = [[NSURLConnection alloc] initWithRequest:req delegate:self startImmediately:NO];
+        self.conn = c;
+        [self.conn start];
+    }];
 
+}
+ 
 // via may be null
 - (void)getRouteFrom:(CLLocationCoordinate2D)start to:(CLLocationCoordinate2D)end via:(NSArray *)viaPoints {
     [self getRouteFrom:start to:end via:viaPoints checksum:nil destinationHint:nil];    
@@ -102,72 +109,75 @@
 }
 
 - (void)getRouteFrom:(CLLocationCoordinate2D)start to:(CLLocationCoordinate2D)end via:(NSArray *)viaPoints checksum:(NSString*)chksum andStartHint:(NSString*)startHint destinationHint:(NSString*)hint andZ:(NSInteger)z{
-    if ([self serverReachable] == NO) {
-        return;
-    }
-    self.currentZ = z;
-    self.currentRequest = @"getRouteFrom:to:via:";
-    
-    NSMutableString * s1 =[NSMutableString stringWithFormat:@"%@/viaroute?z=%d&alt=false", self.osrmServer, z];
-    
-    if (startHint) {
-        s1 = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@", s1, start.latitude, start.longitude, startHint];
-    } else {
-        s1 = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f", s1, start.latitude, start.longitude];
-    }
-    
-    if (viaPoints) {
-        for (CLLocation *point in viaPoints)
-            [s1 appendFormat:@"&loc=%f.6,%.6f", point.coordinate.latitude, point.coordinate.longitude];
-    }
-    NSString *s = @"";
-    
-    if (chksum) {
-        if (hint) {
-            s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@&instructions=true&checksum=%@", s1, end.latitude, end.longitude, hint, chksum];
+    [self runBlockIfServerReachable:^{
+        
+        self.currentZ = z;
+        self.currentRequest = @"getRouteFrom:to:via:";
+        
+        NSMutableString * s1 =[NSMutableString stringWithFormat:@"%@/viaroute?z=%d&alt=false", self.osrmServer, z];
+        
+        if (startHint) {
+            s1 = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@", s1, start.latitude, start.longitude, startHint];
         } else {
-            s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true&checksum=%@", s1, end.latitude, end.longitude, chksum];
+            s1 = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f", s1, start.latitude, start.longitude];
         }
-    } else {
-        s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true", s1, end.latitude, end.longitude];
-    }
-    
-    debugLog(@"%@", s);
-    
-    NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
-    if (self.conn) {
-        [self.conn cancel];
-        self.conn = nil;
-    }
-    self.responseData = [NSMutableData data];
-    NSURLConnection * c = [[NSURLConnection alloc] initWithRequest:req delegate:self startImmediately:NO];
-    self.conn = c;
-    [self.conn start];
+        
+        if (viaPoints) {
+            for (CLLocation *point in viaPoints)
+                [s1 appendFormat:@"&loc=%f.6,%.6f", point.coordinate.latitude, point.coordinate.longitude];
+        }
+        NSString *s = @"";
+        
+        if (chksum) {
+            if (hint) {
+                s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@&instructions=true&checksum=%@", s1, end.latitude, end.longitude, hint, chksum];
+            } else {
+                s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true&checksum=%@", s1, end.latitude, end.longitude, chksum];
+            }
+        } else {
+            s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true", s1, end.latitude, end.longitude];
+        }
+        
+        debugLog(@"%@", s);
+        
+        NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+        if (self.conn) {
+            [self.conn cancel];
+            self.conn = nil;
+        }
+        self.responseData = [NSMutableData data];
+        NSURLConnection * c = [[NSURLConnection alloc] initWithRequest:req delegate:self startImmediately:NO];
+        self.conn = c;
+        [self.conn start];
+    }];
 }
 
 - (void)findNearestPointForStart:(CLLocation*)start andEnd:(CLLocation*)end {
-    if ([self serverReachable] == NO) {
-        return;
-    }
-    self.currentRequest = @"findNearestPointForStart:andEnd:";
-    NSString * s;
-    if (self.locStep == 0) {
-        self.startLoc = start;
-        self.endLoc = end;
-        s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, start.coordinate.latitude, start.coordinate.longitude];
-    } else {
-        s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, end.coordinate.latitude, end.coordinate.longitude];
-    }
-    self.locStep += 1;
-    NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
-    if (self.conn) {
-        [self.conn cancel];
-        self.conn = nil;
-    }
-    self.responseData = [NSMutableData data];
-    NSURLConnection * c = [[NSURLConnection alloc] initWithRequest:req delegate:self startImmediately:NO];
-    self.conn = c;
-    [self.conn start];
+    [self runBlockIfServerReachable:^{
+        self.currentRequest = @"findNearestPointForStart:andEnd:";
+        NSString * s;
+        if (self.locStep == 0) {
+            self.startLoc = start;
+            self.endLoc = end;
+            s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, start.coordinate.latitude, start.coordinate.longitude];
+        } else {
+            s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, end.coordinate.latitude, end.coordinate.longitude];
+        }
+        self.locStep += 1;
+        NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+        if (self.conn) {
+            [self.conn cancel];
+            self.conn = nil;
+        }
+        self.responseData = [NSMutableData data];
+        NSURLConnection * c = [[NSURLConnection alloc] initWithRequest:req delegate:self startImmediately:NO];
+        self.conn = c;
+        [self.conn start];
+        
+    }];
+//    if ([self serverReachable] == NO) {
+//        return;
+//    }
 }
 
 #pragma mark - url connection delegate
@@ -244,9 +254,24 @@
 
 
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+    NSLog(@"Connection didFailWithError %@",error.localizedDescription);
     if ([self.delegate conformsToProtocol:@protocol(SMRequestOSRMDelegate)]) {
         [self.delegate request:self failedWithError:error];
     }
+}
+
+-(void)runBlockIfServerReachable:(void (^)(void))block{
+    __weak SMRequestOSRM* selfRef= self;
+    __weak NSThread* threadRef= [NSThread currentThread];
+    dispatch_async(reachabilityQueue, ^{
+        if([selfRef serverReachable]){
+            [selfRef performSelector:@selector(runBlock:) onThread:threadRef withObject:block waitUntilDone:NO];
+        }
+    });
+}
+
+-(void)runBlock:(void (^)(void))block{
+    block();
 }
 
 @end

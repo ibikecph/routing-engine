@@ -21,10 +21,8 @@
 #define translateString(txt) [SMTranslation decodeString:(txt)]
 
 
-
-
-//#define TILE_SOURCE [[RMOpenStreetMapSource alloc] init]
-#define TILE_SOURCE [[SMiBikeCPHMapTileSource alloc] init]
+#define TILE_SOURCE [[RMOpenStreetMapSource alloc] init]
+//#define TILE_SOURCE [[SMiBikeCPHMapTileSource alloc] init]
 
 #define MIN_DISTANCE_FOR_RECALCULATION 20.0
 
@@ -47,6 +45,7 @@
 #define GEOCODING_SEARCH_RADIUS   [[SMRouteSettings sharedInstance].geocoding_search_radius floatValue]
 
 #define PLACES_SEARCH_RADIUS [SMRouteSettings sharedInstance].places_search_radius
+#define KORT_SEARCH_RADIUS [SMRouteSettings sharedInstance].kort_search_radius
 #define FOURSQUARE_SEARCH_RADIUS [SMRouteSettings sharedInstance].foursquare_search_radius
 #define PLACES_LANGUAGE [SMRouteSettings sharedInstance].places_language
 #define OIOREST_SEARCH_RADIUS [SMRouteSettings sharedInstance].oiorest_search_radius

@@ -9,7 +9,7 @@
 #import "SMTurnInstruction.h"
 
 @implementation SMTurnInstruction
-
+@synthesize drivingDirection= _drivingDirection;
 NSString *iconsSmall[] = {
     @"no icon",
     @"up",
@@ -115,7 +115,7 @@ NSString *directionString(NSString *abbreviation) {
 }
 
 - (UIImage *)smallDirectionIcon {
-    return [UIImage imageNamed:iconsSmall[self.drivingDirection]];
+    return [UIImage imageNamed:self.smallImageName];
 }
 
 - (UIImage *)largeDirectionIcon {
@@ -135,5 +135,9 @@ NSString *directionString(NSString *abbreviation) {
             [self getLocation].coordinate.latitude, [self getLocation].coordinate.longitude];
 }
 
+-(void)setDrivingDirection:(TurnDirection)drivingDirection{
+    _drivingDirection= drivingDirection;
+    self.smallImageName= iconsSmall[self.drivingDirection];
+}
 
 @end

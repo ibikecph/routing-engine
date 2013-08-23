@@ -28,6 +28,7 @@
 - (id)init {
     self = [super init];
     if (self) {
+        self.routeType= SMRouteTypeNormal;
         self.distanceLeft = -1;
         self.tripDistance = -1;
         self.caloriesBurned = -1;
@@ -49,6 +50,7 @@
 - (id)initWithRouteStart:(CLLocationCoordinate2D)start andEnd:(CLLocationCoordinate2D)end andDelegate:(id<SMRouteDelegate>)dlg andJSON:(NSDictionary*) routeJSON {
     self = [self init];
     if (self) {
+        self.routeType= SMRouteTypeNormal;
         [self setLocationStart:start];
         [self setLocationEnd:end];
         [self setDelegate:dlg];
@@ -77,7 +79,6 @@
         if (d <= min) {
             min = d;
             self.lastVisitedWaypointIndex = i;
-            
         }
         if (min < 2) {
             // Close enough :)
@@ -93,7 +94,7 @@
         CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
 
 //        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
-        
+
         
 //        self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
         if ([a distanceFromLocation:b] > 0.0f) {
@@ -186,7 +187,6 @@
         self.recalculationInProgress = YES;
     }
     debugLog(@"Recalculating route!");
-    
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(routeRecalculationStarted)]) {
         [self.delegate routeRecalculationStarted];
@@ -522,10 +522,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                     [self.turnInstructions addObject:instruction];
                 }
                 
-                
             }
-
-            
 //          [route.turnInstructions addObject:[SMTurnInstruction parseInstructionFromJson:obj withRoute:route.waypoints]];
             
         }
@@ -755,8 +752,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 //                }
 //            }
             [self setupRoute:jsonRoot];
-            if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute)]) {
-                [self.delegate startRoute];
+            if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute:)]) {
+                [self.delegate startRoute:self];
             }
         }
 

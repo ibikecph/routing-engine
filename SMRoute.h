@@ -12,12 +12,14 @@
 #import "SMTurnInstruction.h"
 #import "SMRequestOSRM.h"
 
+@class SMRoute;
+
 @protocol SMRouteDelegate <NSObject>
 @required
 - (void) updateTurn:(BOOL)firstElementRemoved;
 - (void) reachedDestination;
 - (void) updateRoute;
-- (void) startRoute;
+- (void) startRoute:(SMRoute*)route;
 - (void) routeNotFound;
 - (void) serverError;
 
@@ -25,6 +27,11 @@
 - (void) routeRecalculationStarted;
 - (void) routeRecalculationDone;
 @end
+
+typedef enum  {
+    SMRouteTypeNormal = 0,
+    SMRouteTypeTransport = 1
+}SMRouteType;
 
 @interface SMRoute : NSObject <SMRequestOSRMDelegate> {
     BOOL approachingTurn;
@@ -37,6 +44,7 @@
 @property (nonatomic, strong) NSMutableArray *pastTurnInstructions; // turn instrucitons from first to the last passed turn
 @property (nonatomic, strong) NSMutableArray *turnInstructions; // turn instruaciton from next to the last
 @property (nonatomic, strong) NSMutableArray *visitedLocations;
+@property (nonatomic, assign) SMRouteType routeType;
 //@property (nonatomic, strong) SMTurnInstruction *lastTurn;
 
 @property CGFloat distanceLeft;
