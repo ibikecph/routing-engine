@@ -100,7 +100,8 @@
 
 
 + (void)oiorestReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
-    NSString* s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f,%@.json", coord.latitude, coord.longitude, OIOREST_SEARCH_RADIUS];
+//    NSString* s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f,%@.json", coord.latitude, coord.longitude, OIOREST_SEARCH_RADIUS];
+    NSString* s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f.json", coord.latitude, coord.longitude];
     NSURLRequest* req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
     
     [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
@@ -108,9 +109,10 @@
             handler(@{}, error);
         } else {
             if (data) {
+                NSString * s = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
                 id res = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithData:data];
                 if (res == nil) {
-                    handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
+                    handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Wrong data returned from the OIOREST: %@", s]}]);
                     return;
                 }
                 if ([res isKindOfClass:[NSArray class]] == NO) {
@@ -141,7 +143,11 @@
 }
 
 + (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
-    [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
+//    if (USE_APPLE_GEOCODER) {
+//        [SMGeocoder appleReverseGeocode:coord completionHandler:handler];
+//    } else {
+        [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
+//    }
 }
 
 @end
