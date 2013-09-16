@@ -25,6 +25,7 @@ static NSLock * _sharingLock;
     self.places_language = @"da";
     self.oiorest_search_radius = @"50";
     self.kort_search_radius= 50000;
+    self.kort_service= @"RestGeokeys";
     self.oiorest_autocomplete_search_radius = @"20000";
     self.use_apple_geocoder = [NSNumber numberWithBool:YES];
     

@@ -46,6 +46,7 @@
 
 #define PLACES_SEARCH_RADIUS [SMRouteSettings sharedInstance].places_search_radius
 #define KORT_SEARCH_RADIUS [SMRouteSettings sharedInstance].kort_search_radius
+#define KORT_SERVICE [SMRouteSettings sharedInstance].kort_service
 #define FOURSQUARE_SEARCH_RADIUS [SMRouteSettings sharedInstance].foursquare_search_radius
 #define PLACES_LANGUAGE [SMRouteSettings sharedInstance].places_language
 #define OIOREST_SEARCH_RADIUS [SMRouteSettings sharedInstance].oiorest_search_radius

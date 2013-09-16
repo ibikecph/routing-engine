@@ -3,7 +3,11 @@
 //  I Bike CPH
 //
 //  Created by Ivan Pavlovic on 30/01/2013.
-//  Copyright (c) 2013 City of Copenhagen. All rights reserved.
+//  Copyright (C) 2013 City of Copenhagen.
+//
+//  This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+//  If a copy of the MPL was not distributed with this file, You can obtain one at 
+//  http://mozilla.org/MPL/2.0/.
 //
 
 #import "SMAutocomplete.h"
@@ -219,7 +223,7 @@ typedef enum {
 //        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"( )+" options:NSRegularExpressionCaseInsensitive error:NULL];
 //        NSString *srchstring = [regex stringByReplacingMatchesInString:self.srchString options:0 range:NSMakeRange(0, [self.srchString length]) withTemplate:@","];
         
-        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=RestGeokeys&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&georad=%d&outgeoref=EPSG:4326&login=%@&password=%@",
+        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&georad=%d&outgeoref=EPSG:4326&login=%@&password=%@", KORT_SERVICE,
             self.srchString, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, KORT_SEARCH_RADIUS, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
         debugLog(@"Kort: %@", URLString);
         NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];

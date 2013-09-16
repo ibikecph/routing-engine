@@ -3,7 +3,11 @@
 //  I Bike CPH
 //
 //  Created by Ivan Pavlovic on 06/02/2013.
-//  Copyright (c) 2013 City of Copenhagen. All rights reserved.
+//  Copyright (C) 2013 City of Copenhagen.
+//
+//  This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+//  If a copy of the MPL was not distributed with this file, You can obtain one at 
+//  http://mozilla.org/MPL/2.0/.
 //
 
 #import "SMRequestOSRM.h"
@@ -117,9 +121,9 @@ static dispatch_queue_t reachabilityQueue;
         NSMutableString * s1 =[NSMutableString stringWithFormat:@"%@/viaroute?z=%d&alt=false", self.osrmServer, z];
         
         if (startHint) {
-            s1 = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@", s1, start.latitude, start.longitude, startHint];
+            s1 = [NSMutableString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@", s1, start.latitude, start.longitude, startHint];
         } else {
-            s1 = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f", s1, start.latitude, start.longitude];
+            s1 = [NSMutableString stringWithFormat:@"%@&loc=%.6f,%.6f", s1, start.latitude, start.longitude];
         }
         
         if (viaPoints) {
