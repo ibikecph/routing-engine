@@ -146,12 +146,67 @@
     }];
 }
 
+/**
+ * use KMS to get coordinates at location.
+ * we fetch 10 nearest coordinates and order by distance
+ */
++ (void)kortReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
+    
+    NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&hits=10&method=nadresse&geop=%lf,%lf&georef=EPSG:4326&georad=%d&outgeoref=EPSG:4326&login=%@&password=%@&geometry=false", KORT_SERVICE,
+                           coord.longitude, coord.latitude, KORT_SEARCH_RADIUS, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
+    debugLog(@"Kort: %@", URLString);
+    NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
+    
+    [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
+        if (error) {
+            handler(@{}, error);
+        } else {
+            if (data) {
+                NSString * s = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                id res = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithData:data];
+                if (res == nil || [res isKindOfClass:[NSDictionary class]] == NO) {
+                    handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"Wrong data returned from the KORT: %@", s]}]);
+                    return;
+                }
+                NSDictionary * json = (NSDictionary*)res;
+                
+                NSArray * x = [[json objectForKey:@"features"] sortedArrayUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
+                    return [[[[obj1 objectForKey:@"attributes"] objectForKey:@"afstand"] objectForKey:@"afstand"] compare:[[[obj2 objectForKey:@"attributes"] objectForKey:@"afstand"] objectForKey:@"afstand"]];
+                }];
+                
+                NSMutableArray * arr = [NSMutableArray array];
+
+                NSString* title = @"";
+                NSString* subtitle = @"";
+                if ([x count] > 0) {
+                    NSDictionary* d = [[x objectAtIndex:0] objectForKey:@"attributes"];
+                    title = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"vej"] objectForKey:@"navn"], [d objectForKey:@"husnr"]];
+                    subtitle = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"postdistrikt"] objectForKey:@"kode"], [[d objectForKey:@"postdistrikt"] objectForKey:@"navn"]];
+                }
+                for (NSDictionary* d1 in x) {
+                    NSDictionary* d = [d1 objectForKey:@"attributes"];
+                    [arr addObject:@{
+                                     @"street" : [[d objectForKey:@"vej"] objectForKey:@"navn"],
+                                     @"house_number" : [d objectForKey:@"husnr"],
+                                     @"zip" : [[d objectForKey:@"postdistrikt"] objectForKey:@"kode"],
+                                     @"city" : [[d objectForKey:@"postdistrikt"] objectForKey:@"navn"]
+                                     }];
+                }
+                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": arr}, nil);
+            } else {
+                handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
+            }
+        }
+    }];
+}
+
 + (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
 //    if (USE_APPLE_GEOCODER) {
 //        [SMGeocoder appleReverseGeocode:coord completionHandler:handler];
 //    } else {
-        [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
+//        [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
 //    }
+    [SMGeocoder kortReverseGeocode:coord completionHandler:handler];
 }
 
 @end
