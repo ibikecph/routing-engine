@@ -21,8 +21,8 @@
 #define translateString(txt) [SMTranslation decodeString:(txt)]
 
 
-#define TILE_SOURCE [[RMOpenStreetMapSource alloc] init]
-//#define TILE_SOURCE [[SMiBikeCPHMapTileSource alloc] init]
+//#define TILE_SOURCE [[RMOpenStreetMapSource alloc] init]
+#define TILE_SOURCE [[SMiBikeCPHMapTileSource alloc] init]
 
 #define MIN_DISTANCE_FOR_RECALCULATION 20.0
 
