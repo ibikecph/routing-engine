@@ -270,8 +270,8 @@ typedef enum {
 //                                    municipalityCode= @"";
 
                             
-                            NSDictionary* geometryInfo= [feature objectForKey:@"geometry"];
                             NSDictionary* attributes=[feature objectForKey:@"attributes"];
+                            NSDictionary* geometryInfo= [attributes objectForKey:@"envelope"];
                             NSDictionary* municipalityInfo= [attributes objectForKey:municipalityKey];
 //                            NSDictionary* distanceInfo= [attributes objectForKey:distanceKey];
                             
