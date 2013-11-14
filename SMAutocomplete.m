@@ -46,10 +46,10 @@ typedef enum {
     self.resultsArr = [NSMutableArray array];
     [self getFoursquareAutocomplete];
     [self getKortforsyningenAutocomplete];
-//    NSDictionary * d = [SMAddressParser parseAddress:self.srchString];
-//    if ([d objectForKey:@"number"] || [d objectForKey:@"city"] || [d objectForKey:@"zip"]) {
-//        [self getKortforsyningenPlacesSearch];
-//    }
+    NSDictionary * d = [SMAddressParser parseAddress:self.srchString];
+    if ([d objectForKey:@"number"] == nil && [d objectForKey:@"city"] == nil && [d objectForKey:@"zip"] == nil) {
+        [self getKortforsyningenPlacesSearch];
+    }
 }
 
 - (void)getOiorestAutocomplete {
@@ -213,53 +213,12 @@ typedef enum {
 
 - (void)getKortforsyningenPlacesSearch{
     NSString* nameKey= @"navn";
-    NSString* nameKey2= @"vej";
-    NSString* zipKey= @"kode";
-    NSString* houseKey= @"husnr";
-    //    NSString* distanceKey= @"afstand";
-    NSString* codeKey= @"kode";
-    NSString* municipalityKey= @"postdistrikt";
-    NSString* geometryX= @"xmin";
-    NSString* geometryY= @"ymin";
     
     completeType= autocompleteKortforsyningen;
     
     if ([SMLocationManager instance].hasValidLocation) {
-        //        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"( )+" options:NSRegularExpressionCaseInsensitive error:NULL];
-        //        NSString *srchstring = [regex stringByReplacingMatchesInString:self.srchString options:0 range:NSMakeRange(0, [self.srchString length]) withTemplate:@","];
-        
-        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@", KORT_SERVICE,
+        NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=sted&stednavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@", KORT_SERVICE,
                                self.srchString, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-        
-        BOOL newParser = NO;
-        
-        NSDictionary * d = [SMAddressParser parseAddress:self.srchString];
-        NSLog(@"Address: %@", d);
-        BOOL additionalData = NO;
-        if ([d objectForKey:@"number"] || [d objectForKey:@"city"] || [d objectForKey:@"zip"]) {
-            additionalData = YES;
-            NSString * s = @"";
-            NSMutableArray * arr = [NSMutableArray array];
-            if ([d objectForKey:@"street"]) {
-                [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", [d objectForKey:@"street"]]];
-            }
-            if ([d objectForKey:@"number"]) {
-                [arr addObject:[NSString stringWithFormat:@"husnr=%@", [d objectForKey:@"number"]]];
-            }
-            if ([d objectForKey:@"city"]) {
-                [arr addObject:[NSString stringWithFormat:@"postdist=%@", [d objectForKey:@"city"]]];
-            }
-            if ([d objectForKey:@"zip"]) {
-                [arr addObject:[NSString stringWithFormat:@"postnr=%@", [d objectForKey:@"zip"]]];
-            }
-            
-            s = [arr componentsJoinedByString:@"&"];
-            
-            URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=adresse&%@&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@", KORT_SERVICE,
-                         s, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-            
-            newParser = YES;
-        }
         
         debugLog(@"Kort: %@", URLString);
         NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
@@ -288,103 +247,30 @@ typedef enum {
                                                                                                          }];
                             
                             
-                            NSDictionary* attributes=[feature objectForKey:@"attributes"];
-                            NSDictionary* geometryInfo= [attributes objectForKey:@"envelope"];
-                            NSDictionary* municipalityInfo= [attributes objectForKey:municipalityKey];
+                            NSDictionary* attributes=[feature objectForKey:@"properties"];
+                            NSArray* geometryInfo= [feature objectForKey:@"bbox"];
                             
-                            if (newParser) {
-                                NSString* streetName= [[attributes objectForKey:nameKey2] objectForKey:nameKey];
-                                if(!streetName) {
-                                    continue;
-                                }
-                                NSString* municipalityName= [municipalityInfo objectForKey:nameKey];
-                                if (!municipalityName) {
-                                    municipalityName= @"";
-                                }
-                                
-                                NSString* municipalityCode= [municipalityInfo objectForKey:codeKey];
-                                if (!municipalityCode) {
-                                    municipalityCode= @"";
-                                }
-                                
-                                NSString* houseNumber = [NSString stringWithFormat:@"%@", [attributes objectForKey:houseKey]];
-                                
-                                
-                                [val setObject:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                streetName,
-                                                houseNumber,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"name"];
-                                [val setObject:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                streetName,
-                                                houseNumber,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"address"];
-                                [val setObject:streetName forKey:@"street"];
-                                [val setObject:municipalityCode forKey:zipKey];
-                                
-                                double distance = [[[attributes objectForKey:@"afstand"] objectForKey:@"afstand"] doubleValue];
-                                
-                                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                                                                        streetName,
-                                                                                                        houseNumber,
-                                                                                                        municipalityCode,
-                                                                                                        municipalityName] andAddress:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                                                                                                      streetName,
-                                                                                                                                      houseNumber,
-                                                                                                                                      municipalityCode,
-                                                                                                                                      municipalityName] andTerms:self.srchString]] forKey:@"relevance"];
-                                
-                            } else {
-                                NSString* streetName= [attributes objectForKey:nameKey];
-                                if(!streetName) {
-                                    streetName= [attributes objectForKey:nameKey2];
-                                    if (!streetName) {
-                                        continue;
-                                    }
-                                }
-                                NSString* municipalityName= [municipalityInfo objectForKey:nameKey];
-                                if (!municipalityName) {
-                                    municipalityName= @"";
-                                }
-                                
-                                NSString* municipalityCode= [municipalityInfo objectForKey:codeKey];
-                                if (!municipalityCode) {
-                                    municipalityCode= @"";
-                                }
-                                
-                                
-                                [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"name"];
-                                [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"address"];
-                                [val setObject:streetName forKey:@"street"];
-                                [val setObject:municipalityCode forKey:zipKey];
-                                
-                                double distance = 0;
-                                if ([[SMLocationManager instance] hasValidLocation]) {
-                                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectForKey:geometryY] doubleValue] longitude:[[geometryInfo objectForKey:geometryX] doubleValue]];
-                                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
-                                    
-                                }
-                                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                                                                        municipalityCode,
-                                                                                                        municipalityName] andAddress:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                                                                                                      municipalityCode,
-                                                                                                                                      municipalityName] andTerms:self.srchString]] forKey:@"relevance"];
+                            NSString* streetName= [attributes objectForKey:nameKey];
+                            if(!streetName) {
+                                continue;
                             }
                             
+                            [val setObject:streetName forKey:@"name"];
+                            [val setObject:streetName forKey:@"address"];
+                            [val setObject:streetName forKey:@"street"];
                             
+                            double distance = 0;
+                            if ([[SMLocationManager instance] hasValidLocation]) {
+                                CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
+                                distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
+                                
+                            }
                             
+                            [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
+                            [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
                             
+                            [val setObject:[NSNumber numberWithDouble:[[attributes objectForKey:@"afstand_afstand"] doubleValue]] forKey:@"distance"];
+                            [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:streetName andAddress:streetName andTerms:self.srchString]] forKey:@"relevance"];
                             
                             [addressArray addObject:val];
                         }
