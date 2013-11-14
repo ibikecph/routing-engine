@@ -171,7 +171,7 @@
                 NSDictionary * json = (NSDictionary*)res;
                 
                 NSArray * x = [[json objectForKey:@"features"] sortedArrayUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
-                    return [[[[obj1 objectForKey:@"attributes"] objectForKey:@"afstand"] objectForKey:@"afstand"] compare:[[[obj2 objectForKey:@"attributes"] objectForKey:@"afstand"] objectForKey:@"afstand"]];
+                    return [[[obj1 objectForKey:@"properties"] objectForKey:@"afstand_afstand"] compare:[[obj2 objectForKey:@"properties"] objectForKey:@"afstand_afstand"]];
                 }];
                 
                 NSMutableArray * arr = [NSMutableArray array];
@@ -179,17 +179,17 @@
                 NSString* title = @"";
                 NSString* subtitle = @"";
                 if ([x count] > 0) {
-                    NSDictionary* d = [[x objectAtIndex:0] objectForKey:@"attributes"];
-                    title = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"vej"] objectForKey:@"navn"], [d objectForKey:@"husnr"]];
-                    subtitle = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"postdistrikt"] objectForKey:@"kode"], [[d objectForKey:@"postdistrikt"] objectForKey:@"navn"]];
+                    NSDictionary* d = [[x objectAtIndex:0] objectForKey:@"properties"];
+                    title = [NSString stringWithFormat:@"%@ %@", [d objectForKey:@"vej_navn"], [d objectForKey:@"husnr"]];
+                    subtitle = [NSString stringWithFormat:@"%@ %@", [d objectForKey:@"postdistrikt_kode"], [d objectForKey:@"postdistrikt_navn"]];
                 }
                 for (NSDictionary* d1 in x) {
-                    NSDictionary* d = [d1 objectForKey:@"attributes"];
+                    NSDictionary* d = [d1 objectForKey:@"properties"];
                     [arr addObject:@{
-                                     @"street" : [[d objectForKey:@"vej"] objectForKey:@"navn"],
+                                     @"street" : [d objectForKey:@"vej_navn"],
                                      @"house_number" : [d objectForKey:@"husnr"],
-                                     @"zip" : [[d objectForKey:@"postdistrikt"] objectForKey:@"kode"],
-                                     @"city" : [[d objectForKey:@"postdistrikt"] objectForKey:@"navn"]
+                                     @"zip" : [d objectForKey:@"postdistrikt_kode"],
+                                     @"city" : [d objectForKey:@"postdistrikt_navn"]
                                      }];
                 }
                 handler(@{@"title" : title, @"subtitle" : subtitle, @"near": arr}, nil);
