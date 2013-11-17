@@ -39,6 +39,7 @@
 //@property (nonatomic, strong) NSString*  fb_app_id;
 @property (nonatomic, strong) NSString*  kort_username;
 @property (nonatomic, strong) NSString*  kort_password;
+@property (nonatomic, strong) NSString*  kort_max_results;
 
 
 
