@@ -162,18 +162,22 @@
         [self terminate];
         return;
     }
-    /**
-     * process data
-     */
-    id result = [NSJSONSerialization JSONObjectWithData:self.responseData options:NSJSONReadingAllowFragments error:NULL];
-    NSString * s = [[NSString alloc] initWithData:self.responseData encoding:NSUTF8StringEncoding];
-    debugLog(@"***          result: %@", s);
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self processResult:result];
-        if (self.delegate && [self.delegate respondsToSelector:@selector(queuedRequest:finishedWithResult:)]) {
-            [self.delegate queuedRequest:self finishedWithResult:self.results];
+    if (self.responseData) {
+        /**
+         * process data
+         */
+        id result = [NSJSONSerialization JSONObjectWithData:self.responseData options:NSJSONReadingAllowFragments error:NULL];
+        if (result) {
+            NSString * s = [[NSString alloc] initWithData:self.responseData encoding:NSUTF8StringEncoding];
+            debugLog(@"***          result: %@", s);
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self processResult:result];
+                if (self.delegate && [self.delegate respondsToSelector:@selector(queuedRequest:finishedWithResult:)]) {
+                    [self.delegate queuedRequest:self finishedWithResult:self.results];
+                }
+            });            
         }
-    });
+    }
     [self willChangeValueForKey:@"isFinished"];
     [self willChangeValueForKey:@"isExecuting"];
     self.finished = YES;

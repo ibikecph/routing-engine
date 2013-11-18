@@ -93,6 +93,8 @@
             
             [dict setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[dict objectForKey:@"name"] andAddress:[dict objectForKey:@"address"] andTerms:self.searchString]] forKey:@"relevance"];
             
+            [dict setObject:[NSNumber numberWithDouble:[[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[dict objectForKey:@"lat"] doubleValue] longitude:[[dict objectForKey:@"long"] doubleValue]]]] forKey:@"distance"];
+            
             if ([[dict objectForKey:@"address"] rangeOfString:@"København"].location != NSNotFound
                 || [[dict objectForKey:@"address"] rangeOfString:@"Koebenhavn"].location != NSNotFound
                 || [[dict objectForKey:@"address"] rangeOfString:@"Kobenhavn"].location != NSNotFound
@@ -105,8 +107,8 @@
             
             
             [arr sortUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
-                double d1 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj1 objectForKey:@"lat"] doubleValue] longitude:[[obj1 objectForKey:@"lat"] doubleValue]]];
-                double d2 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj2 objectForKey:@"lat"] doubleValue] longitude:[[obj2 objectForKey:@"lat"] doubleValue]]];
+                double d1 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj1 objectForKey:@"lat"] doubleValue] longitude:[[obj1 objectForKey:@"long"] doubleValue]]];
+                double d2 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj2 objectForKey:@"lat"] doubleValue] longitude:[[obj2 objectForKey:@"long"] doubleValue]]];
                 if (d1 > d2) {
                     return NSOrderedDescending;
                 } else if (d1 < d2) {

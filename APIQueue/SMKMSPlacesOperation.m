@@ -37,7 +37,8 @@
     NSString* nameKey= @"navn";
     
     NSDictionary* json= (NSDictionary*)result;
-    
+    NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
+    [set addCharactersInString:@","];
     NSMutableArray* addressArray= [NSMutableArray new];
     for (NSString* key in json.allKeys) {
         if ([key isEqualToString:@"features"]) {
@@ -51,8 +52,10 @@
                 
                 NSDictionary* attributes=[feature objectForKey:@"properties"];
                 NSArray* geometryInfo= [feature objectForKey:@"bbox"];
+                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
+                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
                 
-                NSString* streetName= [attributes objectForKey:nameKey];
+                NSString* streetName= [[attributes objectForKey:nameKey] stringByTrimmingCharactersInSet:set];
                 if(!streetName) {
                     continue;
                 }
@@ -61,15 +64,13 @@
                 [val setObject:streetName forKey:@"address"];
                 [val setObject:streetName forKey:@"street"];
                 
-                double distance = 0;
-                if ([[SMLocationManager instance] hasValidLocation]) {
-                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
-                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
-                    
-                }
-                
-                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
-                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
+//                double distance = 0;
+//                if ([[SMLocationManager instance] hasValidLocation]) {
+//                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
+//                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
+//                    
+//                }
+//                
                 
                 [val setObject:[NSNumber numberWithDouble:[[attributes objectForKey:@"afstand_afstand"] doubleValue]] forKey:@"distance"];
                 [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:streetName andAddress:streetName andTerms:self.searchString]] forKey:@"relevance"];

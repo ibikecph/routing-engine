@@ -36,8 +36,12 @@
     NSString* nameKey= @"navn";
     NSString* zipKey= @"postdistrikt_kode";
     NSString* municipalityKey= @"postdistrikt_navn";
+    NSString* distanceKey= @"afstand_afstand";
     
     NSDictionary* json= (NSDictionary*)result;
+    
+    NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
+    [set addCharactersInString:@","];
     
     NSMutableArray* addressArray= [NSMutableArray new];
     for (NSString* key in json.allKeys) {
@@ -51,7 +55,9 @@
                 
                 
                 NSDictionary* attributes=[feature objectForKey:@"properties"];
-                NSArray* geometryInfo= [attributes objectForKey:@"bbox"];
+//                NSArray* geometryInfo= [feature objectForKey:@"bbox"];
+//                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
+//                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
    
                 NSString* streetName= [attributes objectForKey:nameKey];
                 if(!streetName) {
@@ -68,29 +74,34 @@
                 }
                 
                 
-                [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
+                [val setObject:[[NSString stringWithFormat:@"%@, %@ %@", streetName,
                                 municipalityCode,
-                                municipalityName]
+                                municipalityName] stringByTrimmingCharactersInSet:set]
                         forKey:@"name"];
-                [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
+                [val setObject:[[NSString stringWithFormat:@"%@ , %@ %@", streetName,
                                 municipalityCode,
-                                municipalityName]
+                                municipalityName] stringByTrimmingCharactersInSet:set]
                         forKey:@"address"];
                 [val setObject:streetName forKey:@"street"];
                 [val setObject:municipalityCode forKey:@"zip"];
                 
-                double distance = 0;
-                if ([[SMLocationManager instance] hasValidLocation]) {
-                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
-                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
-                    
-                }
+//                double distance = 0;
+//                if ([[SMLocationManager instance] hasValidLocation]) {
+//                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
+//                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
+//                    
+//                }
+//                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
+                double distance = [[attributes objectForKey:distanceKey] doubleValue];
                 [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
+                
+                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[[NSString stringWithFormat:@"%@ , %@ %@", streetName,
                                                                                         municipalityCode,
-                                                                                        municipalityName] andAddress:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
+                                                                                        municipalityName] stringByTrimmingCharactersInSet:set]
+                                                                            andAddress:[[NSString stringWithFormat:@"%@ , %@ %@", streetName,
                                                                                                                       municipalityCode,
-                                                                                                                      municipalityName] andTerms:self.searchString]] forKey:@"relevance"];
+                                                                                                                      municipalityName] stringByTrimmingCharactersInSet:set]
+                                                                              andTerms:self.searchString]] forKey:@"relevance"];
                 
                 
                 [addressArray addObject:val];
