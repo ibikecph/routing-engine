@@ -16,7 +16,7 @@
 #import "SMKMSStreetOperation.h"
 #import "SMKMSAddressOperation.h"
 
-@interface SMAPIQueue : NSObject
+@interface SMAPIQueue : NSObject <SMAPIOperationDelegate>
 
 @property (nonatomic, weak) id<SMAPIOperationDelegate> delegate;
 

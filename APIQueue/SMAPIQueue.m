@@ -26,7 +26,7 @@
         } else {
             [self.queue setMaxConcurrentOperationCount:maxOps];
         }
-//    [self.queue addObserver:self forKeyPath:@"operations" options:NSKeyValueObservingOptionNew context:NULL];
+    [self.queue addObserver:self forKeyPath:@"operations" options:NSKeyValueObservingOptionNew context:NULL];
     }
     return self;
 }
@@ -47,42 +47,42 @@
 }
 
 - (SMFoursquareOperation*)addFoursquareTask:(NSDictionary*)taskDict {
-    @synchronized (self.queue) {
-        SMFoursquareOperation * task = [[SMFoursquareOperation alloc] initWithData:taskDict andDelegate:self.delegate];
+//    @synchronized (self.queue) {
+        SMFoursquareOperation * task = [[SMFoursquareOperation alloc] initWithData:taskDict andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
-    }
+//    }
     return nil;
 }
 
 - (SMKMSStreetOperation*)addKMSStreetTask:(NSDictionary*)taskDict {
-    @synchronized (self.queue) {
-        SMKMSStreetOperation * task = [[SMKMSStreetOperation alloc] initWithData:taskDict andDelegate:self.delegate];
+//    @synchronized (self.queue) {
+        SMKMSStreetOperation * task = [[SMKMSStreetOperation alloc] initWithData:taskDict andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
-    }
+//    }
     return nil;
 }
 
 - (SMKMSAddressOperation*)addKMSAddressTask:(NSDictionary*)taskDict {
-    @synchronized (self.queue) {
-        SMKMSAddressOperation * task = [[SMKMSAddressOperation alloc] initWithData:taskDict andDelegate:self.delegate];
+//    @synchronized (self.queue) {
+        SMKMSAddressOperation * task = [[SMKMSAddressOperation alloc] initWithData:taskDict andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
-    }
+//    }
     return nil;
 }
 
 - (SMKMSPlacesOperation*)addKMSPlacesTask:(NSDictionary*)taskDict {
-    @synchronized (self.queue) {
-        SMKMSPlacesOperation * task = [[SMKMSPlacesOperation alloc] initWithData:taskDict andDelegate:self.delegate];
+//    @synchronized (self.queue) {
+        SMKMSPlacesOperation * task = [[SMKMSPlacesOperation alloc] initWithData:taskDict andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
-    }
+//    }
     return nil;
 }
 
@@ -96,9 +96,10 @@
 #pragma mark - file download delegate
 
 - (void)stopAllRequests {
-    @synchronized(self.queue) {
+//    @synchronized(self.queue) {
         [self.queue cancelAllOperations];
-    }
+        debugLog(@"Cancel all operations!");
+//    }
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
@@ -107,5 +108,22 @@
     }
 }
 
+#pragma mark - api operations delegate
+
+- (void)queuedRequest:(SMAPIOperation *)object failedWithError:(NSError *)error {
+    @synchronized(self.queue) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(queuedRequest:failedWithError:)]) {
+            [self.delegate queuedRequest:object failedWithError:error];
+        }
+    }
+}
+
+- (void)queuedRequest:(SMAPIOperation *)object finishedWithResult:(id)result {
+    @synchronized(self.queue) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(queuedRequest:finishedWithResult:)]) {
+            [self.delegate queuedRequest:object finishedWithResult:result];
+        }
+    }
+}
 
 @end
