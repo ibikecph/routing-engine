@@ -17,14 +17,16 @@
 - (NSInteger)numberOfOccurenciesOfString:(NSString*)str {
     NSInteger total = 0;
     
-    NSRange rng = [self rangeOfString:str options:NSCaseInsensitiveSearch];
-    
-    while (rng.location != NSNotFound && rng.location < self.length) {
-        total += 1;
-        if ((rng.location + rng.length + 1) >= self.length) {
-            return total;
+    if (str && self) {
+        NSRange rng = [self rangeOfString:str options:NSCaseInsensitiveSearch];
+        
+        while (rng.location != NSNotFound && rng.location < self.length) {
+            total += 1;
+            if ((rng.location + rng.length + 1) >= self.length) {
+                return total;
+            }
+            rng = [self rangeOfString:str options:NSCaseInsensitiveSearch range:NSMakeRange(rng.location + rng.length + 1, self.length - rng.location - rng.length - 1)];
         }
-        rng = [self rangeOfString:str options:NSCaseInsensitiveSearch range:NSMakeRange(rng.location + rng.length + 1, self.length - rng.location - rng.length - 1)];
     }
     return total;
 }

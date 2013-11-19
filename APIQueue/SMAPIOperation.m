@@ -22,6 +22,7 @@
     if (self) {
         [self setDelegate:dlg];
         self.startParams = [d objectForKey:@"params"];
+        self.responseData = [NSMutableData data];
     }
     return self;
 }

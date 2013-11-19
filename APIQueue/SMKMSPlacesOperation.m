@@ -35,6 +35,7 @@
 
 - (void)processResult:(id)result {
     NSString* nameKey= @"navn";
+    NSString* municipalityKey= @"kommune_navn";
     
     NSDictionary* json= (NSDictionary*)result;
     NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
@@ -45,7 +46,7 @@
             NSArray* features= [json objectForKey:key]; // array of features (dictionaries)
             for(NSDictionary* feature in features){
                 NSMutableDictionary * val = [NSMutableDictionary dictionaryWithDictionary: @{@"source" : @"autocomplete",
-                                                                                             @"subsource" : @"oiorest",
+                                                                                             @"subsource" : @"places",
                                                                                              @"order" : @2
                                                                                              }];
                 
@@ -61,7 +62,14 @@
                 }
                 
                 [val setObject:streetName forKey:@"name"];
-                [val setObject:streetName forKey:@"address"];
+                
+                
+                NSString* municipalityName= [attributes objectForKey:municipalityKey];
+                if (!municipalityName) {
+                    municipalityName= @"";
+                }
+                
+                [val setObject:municipalityName forKey:@"address"];
                 [val setObject:streetName forKey:@"street"];
                 
 //                double distance = 0;
