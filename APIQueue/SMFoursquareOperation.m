@@ -18,9 +18,9 @@
 - (void)startOperation {
     self.searchString = [self.startParams objectForKey:@"text"];
     
-    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/suggestcompletion?ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS];
+//    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/suggestcompletion?ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@categoryId=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS];
 
-//    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/search?ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS];
+    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/search?intent=browse&ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@&categoryId=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS, [SMRouteSettings sharedInstance].foursquare_categories];
 
     
     debugLog(@"*** URL: %@", URLString);
@@ -38,7 +38,7 @@
     NSDictionary * res = (NSDictionary*)result;
     NSMutableArray * arr = [NSMutableArray array];
     
-    for (NSDictionary* d in [[res objectForKey:@"response"] objectForKey:@"minivenues"]) { // change to venues
+    for (NSDictionary* d in [[res objectForKey:@"response"] objectForKey:@"venues"]) { // change to minivenues if reverting
         if ([[d objectForKey:@"location"] objectForKey:@"lat"] && [[d objectForKey:@"location"] objectForKey:@"lng"]
             && (([[[d objectForKey:@"location"] objectForKey:@"lat"] doubleValue] != 0) || ([[[d objectForKey:@"location"] objectForKey:@"lng"] doubleValue] != 0))) {
             NSMutableArray * ar = [NSMutableArray array];

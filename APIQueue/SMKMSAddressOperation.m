@@ -27,7 +27,7 @@
         [arr addObject:[NSString stringWithFormat:@"husnr=%@", [self.startParams objectForKey:@"number"]]];
     }
     if ([self.startParams objectForKey:@"city"]) {
-        [arr addObject:[NSString stringWithFormat:@"postdist=%@", [self.startParams objectForKey:@"city"]]];
+        [arr addObject:[NSString stringWithFormat:@"postdist=*%@*", [self.startParams objectForKey:@"city"]]];
     }
     if ([self.startParams objectForKey:@"zip"]) {
         [arr addObject:[NSString stringWithFormat:@"postnr=%@", [self.startParams objectForKey:@"zip"]]];

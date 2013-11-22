@@ -22,6 +22,7 @@ static NSLock * _sharingLock;
     self.geocoding_search_radius = [NSNumber numberWithFloat:50000.0];
     self.places_search_radius = @"20000";
     self.foursquare_search_radius = @"20000";
+    self.foursquare_categories = @"";
     self.places_language = @"da";
     self.oiorest_search_radius = @"50";
     self.kort_search_radius= 50000;
