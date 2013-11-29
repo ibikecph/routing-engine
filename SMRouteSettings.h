@@ -35,6 +35,7 @@
 @property (nonatomic, strong) NSString*  foursquare_id;
 @property (nonatomic, strong) NSString*  foursquare_secret;
 @property (nonatomic, strong) NSString*  foursquare_categories;
+@property (nonatomic, strong) NSString*  foursquare_limit;
 //@property (nonatomic, strong) NSString*  hockeyapp_beta_identifier;
 //@property (nonatomic, strong) NSString*  hockeyapp_live_identifier;
 //@property (nonatomic, strong) NSString*  fb_app_id;

@@ -20,7 +20,7 @@
     
 //    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/suggestcompletion?ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@categoryId=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS];
 
-    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/search?intent=browse&ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@&categoryId=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS, [SMRouteSettings sharedInstance].foursquare_categories];
+    NSString * URLString = [NSString stringWithFormat:@"https://api.foursquare.com/v2/venues/search?intent=browse&ll=%f,%f&client_id=%@&client_secret=%@&query=%@&v=%@&radius=%@&limit=%@&categoryId=%@", [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMLocationManager instance].lastValidLocation.coordinate.longitude, FOURSQUARE_ID, FOURSQUARE_SECRET, [[self.searchString removeAccents] urlEncode], @"20130301", FOURSQUARE_SEARCH_RADIUS, [SMRouteSettings sharedInstance].foursquare_limit, [SMRouteSettings sharedInstance].foursquare_categories];
 
     
     debugLog(@"*** URL: %@", URLString);
@@ -73,14 +73,14 @@
             } else {
                 [dict setValue:@"" forKey:@"city"];
             }
-            if ([[d objectForKey:@"location"] objectForKey:@"country"]) {
-                [dict setValue:[[d objectForKey:@"location"] objectForKey:@"country"] forKey:@"country"];
-                if ([[[[d objectForKey:@"location"] objectForKey:@"country"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                    [ar addObject:[[[d objectForKey:@"location"] objectForKey:@"country"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
-                }
-            } else {
-                [dict setValue:@"" forKey:@"country"];
-            }
+//            if ([[d objectForKey:@"location"] objectForKey:@"country"]) {
+//                [dict setValue:[[d objectForKey:@"location"] objectForKey:@"country"] forKey:@"country"];
+//                if ([[[[d objectForKey:@"location"] objectForKey:@"country"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
+//                    [ar addObject:[[[d objectForKey:@"location"] objectForKey:@"country"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+//                }
+//            } else {
+//                [dict setValue:@"" forKey:@"country"];
+//            }
             
             if ([d objectForKey:@"categories"] && [[d objectForKey:@"categories"] count] > 0) {
                 NSDictionary * d2 = [[d objectForKey:@"categories"] objectAtIndex:0];
@@ -98,30 +98,33 @@
             
             [dict setObject:[NSNumber numberWithDouble:[[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[dict objectForKey:@"lat"] doubleValue] longitude:[[dict objectForKey:@"long"] doubleValue]]]] forKey:@"distance"];
             
-            if ([[dict objectForKey:@"address"] rangeOfString:@"København"].location != NSNotFound
-                || [[dict objectForKey:@"address"] rangeOfString:@"Koebenhavn"].location != NSNotFound
-                || [[dict objectForKey:@"address"] rangeOfString:@"Kobenhavn"].location != NSNotFound
-                || [[dict objectForKey:@"address"] rangeOfString:@"Copenhagen"].location != NSNotFound
-                || [[dict objectForKey:@"address"] rangeOfString:@"Frederiksberg"].location != NSNotFound
-                || [[dict objectForKey:@"address"] rangeOfString:@"Valby"].location != NSNotFound
-                ) {
+//            if ([[dict objectForKey:@"address"] rangeOfString:@"København"].location != NSNotFound
+//                || [[dict objectForKey:@"address"] rangeOfString:@"Koebenhavn"].location != NSNotFound
+//                || [[dict objectForKey:@"address"] rangeOfString:@"Kobenhavn"].location != NSNotFound
+//                || [[dict objectForKey:@"address"] rangeOfString:@"Copenhagen"].location != NSNotFound
+//                || [[dict objectForKey:@"address"] rangeOfString:@"Frederiksberg"].location != NSNotFound
+//                || [[dict objectForKey:@"address"] rangeOfString:@"Valby"].location != NSNotFound
+//                ) {
                 [arr addObject:dict];
-            }
+//            }
+        
             
             
-            [arr sortUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
-                double d1 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj1 objectForKey:@"lat"] doubleValue] longitude:[[obj1 objectForKey:@"long"] doubleValue]]];
-                double d2 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj2 objectForKey:@"lat"] doubleValue] longitude:[[obj2 objectForKey:@"long"] doubleValue]]];
-                if (d1 > d2) {
-                    return NSOrderedDescending;
-                } else if (d1 < d2) {
-                    return NSOrderedAscending;
-                } else {
-                    return NSOrderedSame;
-                }
-            }];
         }
+        
     }
+    
+    [arr sortUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
+        double d1 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj1 objectForKey:@"lat"] doubleValue] longitude:[[obj1 objectForKey:@"long"] doubleValue]]];
+        double d2 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj2 objectForKey:@"lat"] doubleValue] longitude:[[obj2 objectForKey:@"long"] doubleValue]]];
+        if (d1 > d2) {
+            return NSOrderedDescending;
+        } else if (d1 < d2) {
+            return NSOrderedAscending;
+        } else {
+            return NSOrderedSame;
+        }
+    }];
     
     self.results = arr;
 }

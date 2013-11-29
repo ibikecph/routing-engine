@@ -36,6 +36,8 @@ static NSLock * _sharingLock;
     self.foursquare_id = nil;
     self.foursquare_secret = nil;
     self.kort_max_results = @"10";
+    
+    self.foursquare_limit = @"10";
 //    self.hockeyapp_beta_identifier = nil;
 //    self.hockeyapp_live_identifier = nil;
 //    self.fb_app_id = nil;
