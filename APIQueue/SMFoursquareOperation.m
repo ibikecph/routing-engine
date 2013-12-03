@@ -156,7 +156,7 @@
                 }
             }
             x = [ax componentsJoinedByString:@", "];
-            [dict setObject:x forKey:@"address"];
+            [dict setObject:[x stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] forKey:@"address"];
             
             
 //            if ([[d objectForKey:@"location"] objectForKey:@"address"]) {
@@ -184,6 +184,12 @@
 //            }
             
             [dict setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[dict objectForKey:@"name"] andAddress:[dict objectForKey:@"address"] andTerms:self.searchString]] forKey:@"relevance"];
+            
+            [dict setObject:[dict objectForKey:@"name"] forKey:@"line1"];
+            if ([dict objectForKey:@"address"] && [[dict objectForKey:@"address"] isEqualToString:@""] == NO) {
+                [dict setObject:[dict objectForKey:@"address"] forKey:@"line2"];                
+            }
+
             
             [dict setObject:[NSNumber numberWithDouble:[[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[dict objectForKey:@"lat"] doubleValue] longitude:[[dict objectForKey:@"long"] doubleValue]]]] forKey:@"distance"];
             

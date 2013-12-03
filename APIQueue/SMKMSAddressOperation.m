@@ -123,6 +123,9 @@
                                                                               andTerms:self.searchString]] forKey:@"relevance"];
                 
                 
+                [val setObject:[NSString stringWithFormat:@"%@ %@", streetName, houseNumber] forKey:@"line1"];
+                [val setObject:[NSString stringWithFormat:@"%@ %@", municipalityCode, municipalityName] forKey:@"line2"];
+                
                 [addressArray addObject:val];
             }
             

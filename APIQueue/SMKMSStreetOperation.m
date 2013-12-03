@@ -104,6 +104,9 @@
                                                                               andTerms:self.searchString]] forKey:@"relevance"];
                 
                 
+                [val setObject:streetName forKey:@"line1"];
+                [val setObject:[NSString stringWithFormat:@"%@ %@", municipalityCode, municipalityName] forKey:@"line2"];
+
                 [addressArray addObject:val];
             }
             
