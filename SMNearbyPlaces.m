@@ -52,7 +52,7 @@
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection {
     if ([self.responseData length] > 0) {
-//        NSString * str = [[NSString alloc] initWithData:self.responseData encoding:NSUTF8StringEncoding];
+        NSString * str = [[NSString alloc] initWithData:self.responseData encoding:NSUTF8StringEncoding];
         id res = [NSJSONSerialization JSONObjectWithData:self.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithData:self.responseData];
         
         if (res == nil) {

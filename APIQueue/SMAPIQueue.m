@@ -37,12 +37,15 @@
 
 - (void)addTasks:(NSString *)srchString {
     NSDictionary * d = [SMAddressParser parseAddress:srchString];
-    if ([d objectForKey:@"number"] == nil) {
+    if ([d objectForKey:@"number"] == nil && [d objectForKey:@"city"] == nil && [d objectForKey:@"zip"] == nil) {
         [self addKMSPlacesTask:@{@"params" : d}];
         [self addKMSStreetTask:@{@"params" : d}];
-        [self addFoursquareTask:@{@"params" : d}];
     } else {
         [self addKMSAddressTask:@{@"params" : d}];
+    }
+    
+    if ([d objectForKey:@"number"] == nil) {
+        [self addFoursquareTask:@{@"params" : d}];
     }
 }
 
