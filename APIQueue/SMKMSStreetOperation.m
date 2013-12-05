@@ -18,7 +18,7 @@
 - (void)startOperation {
     self.searchString = [self.startParams objectForKey:@"street"];
     
-    NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&hits=%@", KORT_SERVICE,
+    NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&hits=%@&geometry=true", KORT_SERVICE,
                            self.searchString, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password, [SMRouteSettings sharedInstance].kort_max_results] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     
     debugLog(@"*** URL: %@", URLString);
@@ -55,9 +55,9 @@
                 
                 
                 NSDictionary* attributes=[feature objectForKey:@"properties"];
-//                NSArray* geometryInfo= [feature objectForKey:@"bbox"];
-//                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
-//                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
+                NSArray* geometryInfo= [feature objectForKey:@"bbox"];
+                [val setObject:[NSNumber numberWithDouble:([[geometryInfo objectAtIndex:1] doubleValue] + [[geometryInfo objectAtIndex:3] doubleValue])/2.0f] forKey:@"lat"];
+                [val setObject:[NSNumber numberWithDouble:([[geometryInfo objectAtIndex:0] doubleValue] + [[geometryInfo objectAtIndex:2] doubleValue])/2.0f] forKey:@"long"];
    
                 NSString* streetName= [attributes objectForKey:nameKey];
                 if(!streetName) {
