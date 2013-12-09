@@ -85,13 +85,6 @@
                 [val setObject:streetName forKey:@"street"];
                 [val setObject:municipalityCode forKey:@"zip"];
                 
-//                double distance = 0;
-//                if ([[SMLocationManager instance] hasValidLocation]) {
-//                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
-//                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
-//                    
-//                }
-//                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
                 double distance = [[attributes objectForKey:distanceKey] doubleValue];
                 [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
                 
