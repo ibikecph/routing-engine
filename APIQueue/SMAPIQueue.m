@@ -44,7 +44,7 @@
         [self addKMSAddressTask:@{@"params" : d}];
     }
     
-    if ([d objectForKey:@"number"] == nil) {
+    if ([d objectForKey:@"number"] == nil && srchString.length > 2) {
         [self addFoursquareTask:@{@"params" : d}];
     }
 }
