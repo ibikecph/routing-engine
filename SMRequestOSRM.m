@@ -79,7 +79,8 @@ static dispatch_queue_t reachabilityQueue;
         self.currentRequest = @"findNearestPointForLocation:";
         self.coord = loc;
         NSString * s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, loc.coordinate.latitude, loc.coordinate.longitude];
-        NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+        NSMutableURLRequest * req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:s]];
+        [req setValue:USER_AGENT forHTTPHeaderField:@"User-Agent"];
         if (self.conn) {
             [self.conn cancel];
             self.conn = nil;
@@ -144,7 +145,8 @@ static dispatch_queue_t reachabilityQueue;
         
         debugLog(@"%@", s);
         
-        NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+        NSMutableURLRequest * req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:s]];
+        [req setValue:USER_AGENT forHTTPHeaderField:@"User-Agent"];
         if (self.conn) {
             [self.conn cancel];
             self.conn = nil;
@@ -168,7 +170,8 @@ static dispatch_queue_t reachabilityQueue;
             s = [NSString stringWithFormat:@"%@/nearest?loc=%.6f,%.6f", self.osrmServer, end.coordinate.latitude, end.coordinate.longitude];
         }
         self.locStep += 1;
-        NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
+        NSMutableURLRequest * req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:s]];
+        [req setValue:USER_AGENT forHTTPHeaderField:@"User-Agent"];
         if (self.conn) {
             [self.conn cancel];
             self.conn = nil;
