@@ -17,6 +17,7 @@
 @property (nonatomic, strong) NSString*  osrm_address;
 @property (nonatomic, strong) NSString*  osrm_server;
 @property (nonatomic, strong) NSString*  osrm_server_cargo;
+@property (nonatomic, strong) NSString*  osrm_server_green;
 
 @property (nonatomic, strong) NSNumber*  geocoding_search_radius; //float
 

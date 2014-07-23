@@ -41,6 +41,7 @@
 #define OSRM_ADDRESS [SMRouteSettings sharedInstance].osrm_address
 #define OSRM_SERVER [SMRouteSettings sharedInstance].osrm_server
 #define OSRM_SERVER_CARGO [SMRouteSettings sharedInstance].osrm_server_cargo
+#define OSRM_SERVER_GREEN [SMRouteSettings sharedInstance].osrm_server_green
 
 #define GEOCODING_SEARCH_RADIUS   [[SMRouteSettings sharedInstance].geocoding_search_radius floatValue]
 
