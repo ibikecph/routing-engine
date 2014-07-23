@@ -177,7 +177,7 @@ double distanceFromLineInMeters(CLLocationCoordinate2D C, CLLocationCoordinate2D
     
     if (dA == 0) return 0;
     if (dB == 0) return 0;
-    if (dAB == 0) return dA;
+    if (dAB == 0) return EARTH_RADIUS_IN_METERS * dA;
     
     return EARTH_RADIUS_IN_METERS * distanceFromArc(dA, dB, dAB);
 }
