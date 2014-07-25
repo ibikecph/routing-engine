@@ -46,18 +46,6 @@ double distanceFromArc(double dA, double dB, double dAB) {
     
     // It is possible that both sinuses are too small so we can get nan when dividing with them
     if (isnan(alpha) || isnan(beta)) {
-        //        double cosa = cos(a);
-        //        double cosbc = cos(b) * cos(c);
-        //        double minus1 = cosa - cosbc;
-        //        double sinbc = sin(b) * sin(c);
-        //        double div1 = minus1 / sinbc;
-        //
-        //        double cosb = cos(b);
-        //        double cosca = cos(a) * cos(c);
-        //        double minus2 = cosb - cosca;
-        //        double sinca = sin(a) * sin(c);
-        //        double div2 = minus2 / sinca;
-        
         return -1.0;
     }
     
