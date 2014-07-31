@@ -244,7 +244,7 @@ double RadiansToDegrees(double radians) {return radians * 180/M_PI;};
         }
         //      debugLog(@"decodePolyline(): (%d, %d)", lat, lng);
         
-        [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / 1e5) longitude:((double)lng / 1e5)]];
+        [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / ROUTE_POLYLINE_PRECISION) longitude:((double)lng / ROUTE_POLYLINE_PRECISION)]];
     }
     
     return locations;

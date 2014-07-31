@@ -43,6 +43,7 @@
 @property (nonatomic, strong) NSString*  kort_username;
 @property (nonatomic, strong) NSString*  kort_password;
 @property (nonatomic, strong) NSString*  kort_max_results;
+@property CGFloat route_polyline_precision;
 
 
 

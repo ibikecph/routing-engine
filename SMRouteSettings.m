@@ -38,6 +38,7 @@ static NSLock * _sharingLock;
     self.kort_max_results = @"10";
     
     self.foursquare_limit = @"10";
+    self.route_polyline_precision = 1e5;
 //    self.hockeyapp_beta_identifier = nil;
 //    self.hockeyapp_live_identifier = nil;
 //    self.fb_app_id = nil;

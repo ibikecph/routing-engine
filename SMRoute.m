@@ -23,6 +23,8 @@
 @property (nonatomic, strong) CLLocation * lastRecalcLocation;
 @property (nonatomic, strong) NSObject * recalcMutex;
 @property CGFloat distanceFromRoute;
+@property (nonatomic, strong) NSMutableArray *allTurnInstructions;
+@property NSUInteger nextWaypoint;
 @end
 
 @implementation SMRoute {
@@ -43,6 +45,7 @@
         self.lastRecalcLocation = [[CLLocation alloc] initWithLatitude:0 longitude:0];
         self.recalcMutex = [NSObject new];
         self.osrmServer = OSRM_SERVER;
+        self.nextWaypoint = 0;
     }
     return self;
 }
@@ -125,7 +128,7 @@
     if (nextTurn) {
         if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance])  {
             if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
-                [self updateSegment];
+                [self updateSegmentBasedOnWaypoint];
                 approachingTurn = YES;
             }
             self.snapArrow = YES;
@@ -248,95 +251,97 @@
     return approachingTurn && self.turnInstructions.count == 1;
 }
 
-- (void) visitLocation:(CLLocation *)loc {
-    
-    @synchronized(self.visitedLocations) {
-        [self updateDistances:loc];
-        if (!self.visitedLocations)
-            self.visitedLocations = [NSMutableArray array];
-        [self.visitedLocations addObject:@{
-         @"location" : loc,
-         @"date" : [NSDate date]
-         }];
-    }
-
-    @synchronized(self.turnInstructions) {
-        if (self.turnInstructions.count <= 0)
-            return;        
-    }
-    
-    @synchronized(self.recalcMutex) {
-        if (self.recalculationInProgress) {
-            return;
-        }
-    }
-
-
-    // Check if we are finishing:
-    double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
-    double speed = loc.speed > 0 ? loc.speed : 5;
-    int timeToFinish = 100;
-    if (speed > 0) {
-        timeToFinish = distanceToFinish / speed;
-        debugLog(@"finishing in %d", timeToFinish);
-    }
-    /**
-     * are we close to the finish (< 10m or 3s left)?
-     */
-    if (distanceToFinish < 10.0 || timeToFinish <= 3) {
-        if (self.turnInstructions.count == 1) {
-            /**
-             * if there was only one instruction left go through usual channels
-             */
-            approachingTurn = NO;
-            [self updateSegment];
-            return;
-        } else {
-            /**
-             * we have somehow skipped most of the route (going through a park or unknown street)
-             */
-            [self.delegate reachedDestination];
-            return;
-        }
-    }
-
-    // are we approaching some turn or are we past some turn
-    if (approachingTurn) {
-        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:0];
-        
-        double d = [loc distanceFromLocation:[nextTurn getLocation]];
-        if (self.turnInstructions.count > 0 && d > 20.0) {
-            if (loc.course >= 0.0)
-                debugLog(@"loc.course: %f turn->azimuth: %f", loc.course, nextTurn.azimuth);
-
-            approachingTurn = NO;
-
-            debugLog(@"Past turn: %@", nextTurn.wayName);
-            [self updateSegment];
-        }
-    } else if (!approachingTurn) {
-        for (int i = 0; i < self.turnInstructions.count; i++) {
-            SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:i];
-            double distanceFromTurn = [loc distanceFromLocation:[nextTurn getLocation]];
-            if ((distanceFromTurn < 10.0 || (i == self.turnInstructions.count - 1 && distanceFromTurn < 20.0))) {
-//                && (loc.course < 0.0 || fabs(loc.course - nextTurn.azimuth) <= 20.0)) {
-                approachingTurn = YES;
-                if (i > 0)
-                    [self updateSegment];
-                debugLog(@"Approaching turn %@ in %.1g m", nextTurn.wayName, distanceFromTurn);
-                break;
-            }
-        }
-    }
-    
-    // Check if we went too far from the calculated route and, if so, recalculate route
-    // max allowed distance depends on location's accuracy
-    int maxD = loc.horizontalAccuracy >= 0 ? (loc.horizontalAccuracy / 3 + 20) : MAX_DISTANCE_FROM_PATH;
-    if (![self approachingFinish] && self.delegate && [self isTooFarFromRoute:loc maxDistance:maxD]) {
-        approachingTurn = NO;
-        [self recalculateRoute:loc];
-    }
-}
+//- (void) visitLocation:(CLLocation *)loc {
+//    
+//    @synchronized(self.visitedLocations) {
+//        [self updateDistances:loc];
+//        if (!self.visitedLocations)
+//            self.visitedLocations = [NSMutableArray array];
+//        [self.visitedLocations addObject:@{
+//         @"location" : loc,
+//         @"date" : [NSDate date]
+//         }];
+//    }
+//
+//    @synchronized(self.turnInstructions) {
+//        if (self.turnInstructions.count <= 0)
+//            return;        
+//    }
+//    
+//    @synchronized(self.recalcMutex) {
+//        if (self.recalculationInProgress) {
+//            return;
+//        }
+//    }
+//
+//
+//    // Check if we are finishing:
+//    double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
+//    double speed = loc.speed > 0 ? loc.speed : 5;
+//    int timeToFinish = 100;
+//    if (speed > 0) {
+//        timeToFinish = distanceToFinish / speed;
+//        debugLog(@"finishing in %d", timeToFinish);
+//    }
+//    /**
+//     * are we close to the finish (< 10m or 3s left)?
+//     */
+//    if (distanceToFinish < 10.0 || timeToFinish <= 3) {
+//        if (self.turnInstructions.count == 1) {
+//            /**
+//             * if there was only one instruction left go through usual channels
+//             */
+//            approachingTurn = NO;
+//            [self updateSegmentBasedOnWaypoint];
+//            return;
+//        } else {
+//            /**
+//             * we have somehow skipped most of the route (going through a park or unknown street)
+//             */
+//            [self.delegate reachedDestination];
+//            return;
+//        }
+//    }
+//
+////    // are we approaching some turn or are we past some turn
+////    if (approachingTurn) {
+////        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:0];
+////        
+////        double d = [loc distanceFromLocation:[nextTurn getLocation]];
+////        if (self.turnInstructions.count > 0 && d > 20.0) {
+////            if (loc.course >= 0.0)
+////                debugLog(@"loc.course: %f turn->azimuth: %f", loc.course, nextTurn.azimuth);
+////
+////            approachingTurn = NO;
+////
+////            debugLog(@"Past turn: %@", nextTurn.wayName);
+////            [self updateSegmentBasedOnWaypoint];
+////        }
+////    } else if (!approachingTurn) {
+////        for (int i = 0; i < self.turnInstructions.count; i++) {
+////            SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:i];
+////            double distanceFromTurn = [loc distanceFromLocation:[nextTurn getLocation]];
+////            if ((distanceFromTurn < 10.0 || (i == self.turnInstructions.count - 1 && distanceFromTurn < 20.0))) {
+//////                && (loc.course < 0.0 || fabs(loc.course - nextTurn.azimuth) <= 20.0)) {
+////                approachingTurn = YES;
+////                if (i > 0)
+////                    [self updateSegmentBasedOnWaypoint];
+////                debugLog(@"Approaching turn %@ in %.1g m", nextTurn.wayName, distanceFromTurn);
+////                break;
+////            }
+////        }
+////    }
+//    
+//    // Check if we went too far from the calculated route and, if so, recalculate route
+//    // max allowed distance depends on location's accuracy
+//    int maxD = loc.horizontalAccuracy >= 0 ? (loc.horizontalAccuracy / 3 + 20) : MAX_DISTANCE_FROM_PATH;
+//    if (![self approachingFinish] && self.delegate && [self isTooFarFromRoute:loc maxDistance:maxD]) {
+//        approachingTurn = NO;
+//        [self recalculateRoute:loc];
+//    }
+//    
+//    
+//}
 
 - (CLLocation *) getStartLocation {
     if (self.waypoints && self.waypoints.count > 0)
@@ -554,6 +559,10 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         }
         
         
+    }
+    
+    @synchronized(self.turnInstructions) {
+        self.allTurnInstructions = [NSMutableArray arrayWithArray:self.turnInstructions];
     }
 
     self.lastVisitedWaypointIndex = -1;
@@ -803,6 +812,154 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 - (BOOL)isOnPath {
     return self.snapArrow;
+}
+
+#pragma mark - new methods
+
+- (void)updateSegmentBasedOnWaypoint {
+    debugLog(@"UupdateSegmentBasedOnWaypoint!!!!");
+    if (!self.delegate) {
+        NSLog(@"Warning: delegate not set while in updateSegment()!");
+        return;
+    }
+    
+    NSUInteger currentIndex = 0;
+    NSMutableArray * past = [NSMutableArray array];
+    NSMutableArray * future = [NSMutableArray array];
+    for (int i = 0; i < self.allTurnInstructions.count; i++) {
+        SMTurnInstruction * currentTurn = [self.allTurnInstructions objectAtIndex:i];
+        if (self.lastVisitedWaypointIndex <= currentTurn.waypointsIndex) {
+            currentIndex = i;
+            [future addObject:currentTurn];
+        } else {
+            [past addObject:currentTurn];
+        }
+    }
+    @synchronized(self.turnInstructions) {
+        self.pastTurnInstructions = past;
+        self.turnInstructions = future;
+    }
+    
+    if ([self.turnInstructions isEqual:future] || [self.pastTurnInstructions isEqual:past]) {
+        [self.delegate updateTurn:YES];
+    }
+    
+    if (self.turnInstructions.count == 0) {
+        [self.delegate reachedDestination];
+    }
+}
+
+- (BOOL)findNearestRouteSegmentForLocation:(CLLocation *)loc withMaxDistance:(CGFloat)maxDistance {
+    double min = MAXFLOAT;
+    
+    for (int i = 0; i < self.waypoints.count - 1; i++) {
+        CLLocation *a = [self.waypoints objectAtIndex:i];
+        CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
+        double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
+        if (d < 0.0)
+            continue;
+        if (d <= min) {
+            min = d;
+            self.lastVisitedWaypointIndex = i;
+        }
+        if (min < 2) {
+            // Close enough :)
+            break;
+        }
+    }
+    
+    if (min <= maxDistance && min < self.distanceFromRoute) {
+        self.distanceFromRoute = min;
+        
+        CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
+        CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
+        CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
+        
+        if ([a distanceFromLocation:b] > 0.0f) {
+            debugLog(@"=============================");
+            debugLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
+            debugLog(@"Location A: %@", a);
+            debugLog(@"Location B: %@", b);
+            self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:b];
+            debugLog(@"Heading: %f", self.lastCorrectedHeading);
+            debugLog(@"Closest point: (%f %f)", coord.latitude, coord.longitude);
+            debugLog(@"=============================");
+        }
+        if (self.visitedLocations && self.visitedLocations.count > 0) {
+            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
+        }
+    }
+    if (min <= maxDistance) {
+        self.snapArrow = YES;
+    } else {
+        self.snapArrow = NO;
+    }
+    return min > maxDistance;
+}
+
+- (void) visitLocation:(CLLocation *)loc {
+    
+    int maxD = loc.horizontalAccuracy >= 0 ? (loc.horizontalAccuracy / 3 + 20) : MAX_DISTANCE_FROM_PATH;
+    BOOL isTooFar = NO;
+    @synchronized(self.visitedLocations) {
+        [self updateDistances:loc];
+        if (!self.visitedLocations)
+            self.visitedLocations = [NSMutableArray array];
+        [self.visitedLocations addObject:@{
+                                           @"location" : loc,
+                                           @"date" : [NSDate date]
+                                           }];
+        
+        isTooFar = [self findNearestRouteSegmentForLocation:loc withMaxDistance:maxD];
+        [self updateSegmentBasedOnWaypoint];
+    }
+    
+    @synchronized(self.turnInstructions) {
+        if (self.turnInstructions.count <= 0)
+            return;
+    }
+    
+    @synchronized(self.recalcMutex) {
+        if (self.recalculationInProgress) {
+            return;
+        }
+    }
+    
+    
+    // Check if we are finishing:
+    double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
+    double speed = loc.speed > 0 ? loc.speed : 5;
+    int timeToFinish = 100;
+    if (speed > 0) {
+        timeToFinish = distanceToFinish / speed;
+        debugLog(@"finishing in %d", timeToFinish);
+    }
+    /**
+     * are we close to the finish (< 10m or 3s left)?
+     */
+    if (distanceToFinish < 10.0 || timeToFinish <= 3) {
+        if (self.turnInstructions.count == 1) {
+            /**
+             * if there was only one instruction left go through usual channels
+             */
+//            approachingTurn = NO;
+            [self updateSegmentBasedOnWaypoint];
+            return;
+        } else {
+            /**
+             * we have somehow skipped most of the route (going through a park or unknown street)
+             */
+            [self.delegate reachedDestination];
+            return;
+        }
+    }
+    
+    if (![self approachingFinish] && self.delegate && isTooFar) {
+//        approachingTurn = NO;
+        [self recalculateRoute:loc];
+    }
+    
+    
 }
 
 @end
