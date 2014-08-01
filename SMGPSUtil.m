@@ -122,18 +122,21 @@ double distanceFromPointOnArc(double dA, double dB, double dAB) {
     
     // If alpha is obtuse and beta is acute angle, then
     // distance is equal to dA:
-    if (alpha > M_PI_2 && beta < M_PI_2)
+    if (alpha > M_PI_2 && beta < M_PI_2) {
         return -1;
+    }
     
     // Analogously, if beta is obtuse and alpha is acute angle, then
     // distance is equal to dB:
-    if (beta > M_PI_2 && alpha < M_PI_2)
+    if (beta > M_PI_2 && alpha < M_PI_2) {
         return -1;
+    }
 
     
     // Again, unlikely, since it would render at least pi/2*EARTH_RADIUS_IN_METERS, which is too much.
-    if (cos(a) == 0.0)
+    if (cos(a) == 0.0) {
         return -1;
+    }
     
     double x = atan(-1.0/tan(c) + (cos(b) / (cos(a) * sin(c))));
     
