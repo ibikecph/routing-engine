@@ -828,7 +828,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     NSMutableArray * future = [NSMutableArray array];
     for (int i = 0; i < self.allTurnInstructions.count; i++) {
         SMTurnInstruction * currentTurn = [self.allTurnInstructions objectAtIndex:i];
-        if (self.lastVisitedWaypointIndex <= currentTurn.waypointsIndex) {
+        if (self.lastVisitedWaypointIndex < currentTurn.waypointsIndex) {
             currentIndex = i;
             [future addObject:currentTurn];
         } else {
@@ -840,9 +840,11 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.turnInstructions = future;
     }
     
-    if ([self.turnInstructions isEqual:future] || [self.pastTurnInstructions isEqual:past]) {
-        [self.delegate updateTurn:YES];
-    }
+//    if ([self.turnInstructions isEqual:future] == NO || [self.pastTurnInstructions isEqual:past] == NO) {
+//        [self.delegate updateTurn:YES];
+//    }
+    
+    [self.delegate updateTurn:YES];
     
     if (self.turnInstructions.count == 0) {
         [self.delegate reachedDestination];
