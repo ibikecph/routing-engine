@@ -16,7 +16,7 @@
 //#import "SMUtil.h"
 #import "SMRouteUtils.h"
 
-#define MAX_DISTANCE_FROM_PATH 20 // in meters
+#define MAX_DISTANCE_FROM_PATH 30 // in meters
 
 @interface SMRoute()
 @property (nonatomic, strong) SMRequestOSRM * request;
@@ -711,10 +711,6 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         if ([SMLocationManager instance].hasValidLocation) {
             [self updateDistances:[SMLocationManager instance].lastValidLocation];
         }
-        
-//        if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute)]) {
-//            [self.delegate startRoute];
-//        }
     }
 }
 
@@ -749,21 +745,6 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 };
                 return;
             }
-//            BOOL done = [self parseFromJson:jsonRoot delegate:nil];
-//            if (done) {
-//                approachingTurn = NO;
-//                self.tripDistance = 0.0f;
-//                @synchronized(self.pastTurnInstructions) {
-//                    self.pastTurnInstructions = [NSMutableArray array];
-//                }
-//                
-//                if ([SMLocationManager instance].hasValidLocation) {
-//                    [self updateDistances:[SMLocationManager instance].lastValidLocation];
-//                }
-//                if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute)]) {
-//                    [self.delegate startRoute];
-//                }
-//            }
             [self setupRoute:jsonRoot];
             if (self.delegate && [self.delegate respondsToSelector:@selector(startRoute:)]) {
                 [self.delegate startRoute:self];
@@ -854,6 +835,9 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 - (BOOL)findNearestRouteSegmentForLocation:(CLLocation *)loc withMaxDistance:(CGFloat)maxDistance {
     double min = MAXFLOAT;
 
+    locLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
+
+    
     /**
      * first check the most likely position
      */
@@ -920,25 +904,30 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         }
     }
     
+    if (self.lastVisitedWaypointIndex < 0) {
+        /**
+         * check the distance from start
+         */
+        min = [loc distanceFromLocation:[self.waypoints objectAtIndex:0]];
+        /**
+         * if we are less then 5m away from start snap the arrow
+         *
+         * heading is left as sent by the GPS so that you know if you're moving in the wrong direction
+         */
+        if (min < 5) {
+            self.distanceFromRoute = min;
+            self.lastVisitedWaypointIndex = 0;
+            
+            CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
+            CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
+            CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
+            
+            self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:loc andEndLocation:a];
+            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
+//            self.snapArrow = YES;
 
-
-    for (int i = 0; i < self.waypoints.count - 1; i++) {
-        CLLocation *a = [self.waypoints objectAtIndex:i];
-        CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
-        double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
-        if (d < 0.0)
-            continue;
-        if (d <= min) {
-            min = d;
-            self.lastVisitedWaypointIndex = i;
         }
-        if (min < 2) {
-            // Close enough :)
-            break;
-        }
-    }
-    
-    if (min <= maxDistance && self.lastVisitedWaypointIndex > 0 /*&& min < self.distanceFromRoute*/) {
+    } else if (min <= maxDistance && self.lastVisitedWaypointIndex >= 0) {
         self.distanceFromRoute = min;
         
         CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
@@ -955,9 +944,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             locLog(@"Closest: (%f %f)", coord.latitude, coord.longitude);
             locLog(@"=========");
         }
-//        if (self.visitedLocations && self.visitedLocations.count > 0) {
-            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
-//        }
+        self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
         self.snapArrow = YES;
     } else {
         locLog(@"too far from location");
@@ -969,7 +956,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 - (void) visitLocation:(CLLocation *)loc {
     self.snapArrow = YES;
-    int maxD = loc.horizontalAccuracy >= 0 ? (loc.horizontalAccuracy / 3 + 20) : MAX_DISTANCE_FROM_PATH;
+    int maxD = loc.horizontalAccuracy >= 0 ? MAX((loc.horizontalAccuracy / 3 + 20), MAX_DISTANCE_FROM_PATH) : MAX_DISTANCE_FROM_PATH;
     BOOL isTooFar = NO;
     @synchronized(self.visitedLocations) {
         [self updateDistances:loc];
@@ -1002,7 +989,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     int timeToFinish = 100;
     if (speed > 0) {
         timeToFinish = distanceToFinish / speed;
-        locLog(@"finishing in %ds %.0fm", timeToFinish, roundf(distanceToFinish));
+        locLog(@"finishing in %ds %.0fm max distance: %.0fm", timeToFinish, roundf(distanceToFinish), roundf(maxD));
     }
     /**
      * are we close to the finish (< 10m or 3s left)?
