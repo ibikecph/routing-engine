@@ -16,6 +16,7 @@
 #define debugLog(args...)    // NO logs
 #else
 #define debugLog(args...)    NSLog(@"%@", [NSString stringWithFormat: args])
+#define locLog(args...)    [[NSNotificationCenter defaultCenter] postNotificationName:@"notificationAddDebugText" object:nil userInfo:@{@"text" : [NSString stringWithFormat: args]}];
 #endif
 
 #define translateString(txt) [SMTranslation decodeString:(txt)]
