@@ -50,8 +50,8 @@
 #define OSRM_SERVER_GREEN [SMRouteSettings sharedInstance].osrm_server_green
 
 #define OSRM_SERVERS @[@{@"name" : translateString(@"bike_type_1"), @"image" : @"normal_grey", @"imageHighlighted" : @"normal_white", @"server" : OSRM_SERVER}, \
-@{@"name" : translateString(@"bike_type_2"), @"image" :  @"cargo_grey", @"imageHighlighted" : @"cargo_white", @"server" : OSRM_SERVER_CARGO},\
-@{@"name" : translateString(@"bike_type_3"), @"image" :  @"green_grey", @"imageHighlighted" : @"green_white", @"server" : OSRM_SERVER_GREEN}]
+@{@"name" : translateString(@"bike_type_3"), @"image" :  @"green_grey", @"imageHighlighted" : @"green_white", @"server" : OSRM_SERVER_GREEN},\
+@{@"name" : translateString(@"bike_type_2"), @"image" :  @"cargo_grey", @"imageHighlighted" : @"cargo_white", @"server" : OSRM_SERVER_CARGO}]
 
 #define GEOCODING_SEARCH_RADIUS   [[SMRouteSettings sharedInstance].geocoding_search_radius floatValue]
 
