@@ -984,7 +984,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     
     
     // Check if we are finishing:
-    double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
+    double distanceToFinish = MIN([self.lastCorrectedLocation distanceFromLocation:[self getEndLocation]], [loc distanceFromLocation:[self getEndLocation]]);
     double speed = loc.speed > 0 ? loc.speed : 5;
     int timeToFinish = 100;
     if (speed > 0) {
