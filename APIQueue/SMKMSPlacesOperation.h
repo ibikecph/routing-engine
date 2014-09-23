@@ -11,7 +11,11 @@
 //
 
 #import "SMAPIOperation.h"
-
+/**
+ * \ingroup libs
+ * \ingroup api
+ * KMS Places API operation
+ */
 @interface SMKMSPlacesOperation : SMAPIOperation
 
 @end

@@ -18,6 +18,10 @@
 #define POINTS_PART_ADDRESS 1
 #define MINIMUM_PASS_LENGTH 3
 
+/**
+ * \ingroup libs
+ * Routing engine utility methods and functions
+ */
 @interface SMRouteUtils : NSObject
 
 

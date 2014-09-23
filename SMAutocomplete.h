@@ -15,7 +15,10 @@
 @protocol SMAutocompleteDelegate <NSObject>
 - (void)autocompleteEntriesFound:(NSArray*)arr forString:(NSString*) str;
 @end
-
+/**
+ * \ingroup libs
+ * Autocomplete object
+ */
 @interface SMAutocomplete : NSObject
 
 - (id)initWithDelegate:(id<SMAutocompleteDelegate>)dlg;

@@ -16,6 +16,11 @@
 #import "SMKMSStreetOperation.h"
 #import "SMKMSAddressOperation.h"
 
+/**
+ * \ingroup libs
+ * \ingroup api
+ * API operations queue
+ */
 @interface SMAPIQueue : NSObject <SMAPIOperationDelegate>
 
 @property (nonatomic, weak) id<SMAPIOperationDelegate> delegate;

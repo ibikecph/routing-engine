@@ -9,7 +9,6 @@
 #import <Foundation/Foundation.h>
 /**
  * \ingroup libs
- * \ingroup sm
  * URL encode a string
  */
 @interface NSString (URLEncode)

@@ -21,6 +21,10 @@
 
 @end
 
+/**
+ * \ingroup libs
+ * Nearby places locator
+ */
 @interface SMNearbyPlaces : NSObject <NSURLConnectionDelegate, NSURLConnectionDataDelegate>
 
 @property (nonatomic, weak) id<SMNearbyPlacesDelegate> delegate;

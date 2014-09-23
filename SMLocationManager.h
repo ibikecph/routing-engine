@@ -13,6 +13,10 @@
 #import <Foundation/Foundation.h> 
 #import <CoreLocation/CoreLocation.h>
 
+/**
+ * \ingroup libs
+ * Background location manager
+ */
 @interface SMLocationManager : NSObject<CLLocationManagerDelegate>
 {
 	CLLocationManager *locationManager;

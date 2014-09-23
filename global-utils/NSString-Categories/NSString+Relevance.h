@@ -12,6 +12,10 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ * \ingroup libs
+ * Check string match for relevance
+ */
 @interface NSString (Relevance)
 
 - (NSInteger)numberOfOccurenciesOfString:(NSString*)str;

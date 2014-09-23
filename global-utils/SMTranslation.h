@@ -12,11 +12,17 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ * \ingroup libs
+ * On-the-fly translation of strings
+ */
 @interface SMTranslation : NSObject
 
 + (SMTranslation *)instance;
 +(NSString*)decodeString:(NSString*) txt;
-
+/**
+ * recursively translates given view
+ */
 + (void) translateView:(id) view;
 
 @end

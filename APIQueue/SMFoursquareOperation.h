@@ -12,6 +12,11 @@
 
 #import "SMAPIOperation.h"
 
+/**
+ * \ingroup libs
+ * \ingroup api
+ * Foursquare API opeations
+ */
 @interface SMFoursquareOperation : SMAPIOperation
 
 @end

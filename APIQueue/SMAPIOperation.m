@@ -40,7 +40,7 @@
     }
     [self willChangeValueForKey:@"isExecuting"];
     [self willChangeValueForKey:@"isFinished"];
-    self.finished = NO;
+    self.taskFinished = NO;
     self.inProgress = YES;
     [self didChangeValueForKey:@"isFinished"];
     [self didChangeValueForKey:@"isExecuting"];
@@ -60,7 +60,7 @@
     }
     [self willChangeValueForKey:@"isFinished"];
 	[self willChangeValueForKey:@"isExecuting"];
-	self.finished = YES;
+	self.taskFinished = YES;
 	self.inProgress = NO;
 	[self didChangeValueForKey:@"isExecuting"];
 	[self didChangeValueForKey:@"isFinished"];
@@ -80,7 +80,7 @@
 }
 
 - (BOOL)isFinished {
-	return self.finished;
+	return self.taskFinished;
 }
 
 - (BOOL)isCancelled {

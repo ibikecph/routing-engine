@@ -21,6 +21,11 @@
 
 #define URL_CONNECTION_TIMEOUT 15.0f
 
+/**
+ * \ingroup libs
+ * \ingroup api
+ * API operation base class
+ */
 @interface SMAPIOperation : NSOperation
 
 @property (nonatomic, weak) id<SMAPIOperationDelegate> delegate;
@@ -30,7 +35,7 @@
 @property (nonatomic, strong) NSURLConnection * conn;
 @property (nonatomic, strong) NSArray * results;
 
-@property BOOL finished;
+@property BOOL taskFinished;
 @property BOOL inProgress;
 @property BOOL isStopped;
 

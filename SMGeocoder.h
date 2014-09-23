@@ -13,10 +13,16 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
+/**
+ * \ingroup libs
+ * Geocoder/reverse geocoder
+ *
+ * uses KFT, OIOREST or Apple's API
+ */
 @interface SMGeocoder : NSObject
 
 /**
- * geocoding function that uses eithe Apple's or OIOREST geocoder
+ * geocoding function that uses eithe Apple's, OIOREST or KFT geocoder
  */
 + (void)geocode:(NSString*)str completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler;
 + (void)oiorestGeocode:(NSString*)str completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler;
@@ -24,7 +30,7 @@
 
 /**
  * reverse geocoding
- * currently only supports OIOREST
+ * uses eithe Apple's, OIOREST or KFT reverse geocoder
  */
 + (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler;
 + (void)oiorestReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler;

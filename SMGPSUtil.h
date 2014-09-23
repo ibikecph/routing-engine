@@ -13,6 +13,10 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
+/**
+ * \ingroup libs
+ * Routing engine GPS location utility methods
+ */
 @interface SMGPSUtil : NSObject
 
 // Calculates distance between location C and path AB in meters.

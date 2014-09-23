@@ -23,6 +23,10 @@
 
 @end
 
+/**
+ * \ingroup libs
+ * OSRM API calls wrapper
+ */
 @interface SMRequestOSRM : NSObject <NSURLConnectionDelegate, NSURLConnectionDataDelegate>
 
 @property (nonatomic, weak) id<SMRequestOSRMDelegate> delegate;

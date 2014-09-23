@@ -40,6 +40,10 @@ typedef enum {
     ReachingDestination = 100
 } TurnDirection;
 
+/**
+ * \ingroup libs
+ * Turn instruction object
+ */
 @interface SMTurnInstruction : NSObject {
     // We need this array to calculate the location, since we only keep array index of the turn location (waypointsIndex),
     // not the locaiton itself.

@@ -16,6 +16,10 @@
 #define DEFAULT_ROUTESETTINGS_FILENAME @"smroute_settings"
 #define DEFAULT_PRIVATE_SUFIX @"_private"
 
+/**
+ * \ingroup libs
+ * Routing engine settings object
+ */
 @interface SMRouteSettings : NSObject
 
 @property (nonatomic, strong) NSString*  osrm_address;
