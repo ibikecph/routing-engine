@@ -397,7 +397,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         }
         //      debugLog(@"decodePolyline(): (%d, %d)", lat, lng);
         
-        [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / 1e5) longitude:((double)lng / 1e5)]];
+        [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / [SMRouteSettings sharedInstance].route_polyline_precision) longitude:((double)lng / [SMRouteSettings sharedInstance].route_polyline_precision)]];
     }
     
     return locations;
@@ -414,7 +414,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         CLLocationCoordinate2D coordinate = ((CLLocation*)[coordinateValue objectForKey:@"location"]).coordinate;
         
         // Encode latitude
-        val = round((coordinate.latitude - prevCoordinate.latitude) * 1e5);
+        val = round((coordinate.latitude - prevCoordinate.latitude) * [SMRouteSettings sharedInstance].route_polyline_precision);
         val = (val < 0) ? ~(val<<1) : (val <<1);
         while (val >= 0x20) {
             int value = (0x20|(val & 31)) + 63;
@@ -424,7 +424,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         [encodedString appendFormat:@"%c", val + 63];
         
         // Encode longitude
-        val = round((coordinate.longitude - prevCoordinate.longitude) * 1e5);
+        val = round((coordinate.longitude - prevCoordinate.longitude) * [SMRouteSettings sharedInstance].route_polyline_precision);
         val = (val < 0) ? ~(val<<1) : (val <<1);
         while (val >= 0x20) {
             value = (0x20|(val & 31)) + 63;
