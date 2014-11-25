@@ -13,6 +13,7 @@
 #ifndef testRouteMe_SMRouteConsts_h
 #define testRouteMe_SMRouteConsts_h
 
+#import "ModelTypes.h"
 #import "SMTranslation.h"
 #import "SMRouteSettings.h"
 
