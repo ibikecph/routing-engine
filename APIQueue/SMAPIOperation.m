@@ -17,11 +17,11 @@
 
 @implementation SMAPIOperation
 
-- (id)initWithData:(NSDictionary*)d andDelegate:(id<SMAPIOperationDelegate>)dlg {
+- (id)initWithItem:(NSObject<SearchListItem> *)item andDelegate:(id<SMAPIOperationDelegate>)dlg {
     self = [super init];
     if (self) {
         [self setDelegate:dlg];
-        self.startParams = [d objectForKey:@"params"];
+        self.startItem = item;
         self.responseData = [NSMutableData data];
     }
     return self;

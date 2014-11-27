@@ -30,7 +30,7 @@
 
 @property (nonatomic, weak) id<SMAPIOperationDelegate> delegate;
 @property (nonatomic, strong) NSTimer * timeoutTimer;
-@property (nonatomic, strong) NSDictionary * startParams;
+@property (nonatomic, strong) NSObject<SearchListItem> *startItem;
 @property (nonatomic, strong) NSMutableData * responseData;
 @property (nonatomic, strong) NSURLConnection * conn;
 @property (nonatomic, strong) NSArray * results;
@@ -45,6 +45,6 @@
 - (void)terminate;
 - (void)timeoutCancel:(NSTimer*)timer;
 
-- (id)initWithData:(NSDictionary*)d andDelegate:(id<SMAPIOperationDelegate>)dlg;
+- (id)initWithItem:(NSObject<SearchListItem> *)item andDelegate:(id<SMAPIOperationDelegate>)dlg;
 
 @end

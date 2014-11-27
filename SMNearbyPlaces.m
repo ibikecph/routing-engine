@@ -66,18 +66,20 @@
         NSMutableArray * arr = [NSMutableArray array];
         
         if ([(NSArray*)res count] > 0) {
-            NSDictionary * d = [res objectAtIndex:0];
-            self.title = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"]];
-            self.subtitle = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]];
+            OiorestItem *item = [[OiorestItem alloc] initWithJsonDictionary:res[0]];
+            self.title = [NSString stringWithFormat:@"%@ %@", item.street, item.number];
+            self.subtitle = [NSString stringWithFormat:@"%@ %@", item.zip, item.city];
         }
         for (NSDictionary* d in res) {
+            OiorestItem *item = [[OiorestItem alloc] initWithJsonDictionary:d];
             [arr addObject:@{
-             @"street" : [[d objectForKey:@"vejnavn"] objectForKey:@"navn"],
-             @"house_number" : [d objectForKey:@"husnr"],
-             @"zip" : [[d objectForKey:@"postnummer"] objectForKey:@"nr"],
-             @"city" : [[d objectForKey:@"kommune"] objectForKey:@"navn"]
-             }];
+                             @"street" : item.street,
+                             @"house_number" : item.number,
+                             @"zip" : item.zip,
+                             @"city" : item.city
+                             }];
         }
+        
         if ([self.delegate conformsToProtocol:@protocol(SMNearbyPlacesDelegate)]) {
             [self.delegate nearbyPlaces:self foundLocations:arr];
         }

@@ -37,9 +37,9 @@
 /**
  * add a task to queue and get a pointer to it
  */
-- (SMFoursquareOperation*)addFoursquareTask:(NSDictionary*)taskDict;
-- (SMKMSStreetOperation*)addKMSStreetTask:(NSDictionary*)taskDict;
-- (SMKMSPlacesOperation*)addKMSPlacesTask:(NSDictionary*)taskDict;
+- (SMFoursquareOperation*)addFoursquareTask:(NSObject<SearchListItem> *)item;
+- (SMKMSStreetOperation*)addKMSStreetTask:(NSObject<SearchListItem> *)item;
+- (SMKMSPlacesOperation*)addKMSPlacesTask:(NSObject<SearchListItem> *)item;
 - (void)addTasks:(NSString*)srchString;
 
 @end

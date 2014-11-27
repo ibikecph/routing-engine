@@ -17,15 +17,17 @@ typedef NS_ENUM(NSInteger, SearchListItemType) {
     SearchListItemTypeHistory,
     SearchListItemTypeKortfor,
     SearchListItemTypeFoursquare,
+    SearchListItemTypeOiorest,
     SearchListItemTypeCalendar,
-    SearchListItemTypeContact
+    SearchListItemTypeContact,
+    SearchListItemTypeUnknown,
 };
 
 typedef NS_ENUM(NSInteger, FavoriteItemType) {
     FavoriteItemTypeHome,
     FavoriteItemTypeWork,
     FavoriteItemTypeSchool,
-    FavoriteItemTypeUnkown
+    FavoriteItemTypeUnknown
 };
 
 #endif

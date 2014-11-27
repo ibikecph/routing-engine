@@ -44,17 +44,16 @@
         } else if ([(NSArray*)res count] == 0) {
             handler(@[], [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
         } else {
-            NSMutableArray * arr = [NSMutableArray array];
-            for (NSDictionary * d in (NSArray*) res) {
+            NSMutableArray *arr = [NSMutableArray array];
+            for (NSDictionary *d in (NSArray *)res) {
+                OiorestItem *item = [[OiorestItem alloc] initWithJsonDictionary:d];
                 NSDictionary * dict = @{
-                                        (NSString *)kABPersonAddressStreetKey : [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"]],
-                                        (NSString *)kABPersonAddressZIPKey : [[d objectForKey:@"postnummer"] objectForKey:@"nr"],
-                                        (NSString *)kABPersonAddressCityKey : [[d objectForKey:@"kommune"] objectForKey:@"navn"],
-                                        (NSString *)kABPersonAddressCountryKey : @"Denmark"
+                                        (NSString *)kABPersonAddressStreetKey : [NSString stringWithFormat:@"%@ %@", item.street, item.number],
+                                        (NSString *)kABPersonAddressZIPKey : item.zip,
+                                        (NSString *)kABPersonAddressCityKey : item.zip,
+                                        (NSString *)kABPersonAddressCountryKey : item.country
                                         };
-                MKPlacemark * pl = [[MKPlacemark alloc]
-                                    initWithCoordinate:CLLocationCoordinate2DMake([[[d objectForKey:@"wgs84koordinat"] objectForKey:@"bredde"] doubleValue], [[[d objectForKey:@"wgs84koordinat"] objectForKey:@"længde"] doubleValue])
-                                    addressDictionary:dict];
+                MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
                 [arr addObject:pl];
             }
             handler(arr, nil);
@@ -74,65 +73,43 @@
         } else if ([(NSArray*)res count] == 0) {
             handler(@[], [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the KMS"}]);
         } else {
-            NSString* nameKey= @"navn";
             NSDictionary* json= (NSDictionary*)res;
             NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
             [set addCharactersInString:@","];
             NSMutableArray * arr = [NSMutableArray array];
-            for (NSString* key in json.allKeys) {
-                if ([key isEqualToString:@"features"]) {
-                    NSArray* features= [json objectForKey:key]; // array of features (dictionaries)
-                    for(NSDictionary* feature in features){
-                        NSMutableDictionary * val = [NSMutableDictionary dictionaryWithDictionary: @{@"source" : @"autocomplete",
-                                                                                                     @"subsource" : @"places",
-                                                                                                     @"order" : @2
-                                                                                                     }];
-                        
-                        
-                        NSDictionary* attributes=[feature objectForKey:@"properties"];
-                        NSArray* geometryInfo= [feature objectForKey:@"bbox"];
-                        [val setObject:[NSNumber numberWithDouble:([[geometryInfo objectAtIndex:1] doubleValue] + [[geometryInfo objectAtIndex:3] doubleValue])/2.0f] forKey:@"lat"];
-                        [val setObject:[NSNumber numberWithDouble:([[geometryInfo objectAtIndex:0] doubleValue] + [[geometryInfo objectAtIndex:2] doubleValue])/2.0f] forKey:@"long"];
-                        
-                        NSString* streetName= [[attributes objectForKey:nameKey] stringByTrimmingCharactersInSet:set];
-                        if(!streetName) {
-                            continue;
-                        }
-                        
-                        [val setObject:streetName forKey:@"name"];
-                        
-                        [val setObject:[NSNumber numberWithDouble:[[attributes objectForKey:@"afstand_afstand"] doubleValue]] forKey:@"distance"];
-                        
-                        NSDictionary * dict = @{
-                                                (NSString *)kABPersonAddressStreetKey : [val objectForKey:@"name"]
-                                                };
-                        MKPlacemark * pl = [[MKPlacemark alloc]
-                                            initWithCoordinate:CLLocationCoordinate2DMake([[val objectForKey:@"lat"] doubleValue], [[val objectForKey:@"long"] doubleValue])
-                                            addressDictionary:dict];
-                        [arr addObject:pl];
-                    }
-                    
-                }
+           
+            for(NSDictionary* feature in json[@"features"]){
+                KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+                
+                NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
+                item.name = formattedAddress;
+                item.address = formattedAddress;
+                
+                NSDictionary * dict = @{
+                                        (NSString *)kABPersonAddressStreetKey : item.name
+                                        };
+                MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
+                [arr addObject:pl];
             }
             handler(arr, nil);
         }
     }];
 }
 
-+ (void)kortAddressGeocode:(NSDictionary*)dict completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler {
++ (void)kortAddressGeocode:(NSObject<SearchListItem> *)item completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler {
     NSString * s = @"";
     NSMutableArray * arr = [NSMutableArray array];
-    if ([dict objectForKey:@"street"]) {
-        [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", [dict objectForKey:@"street"]]];
+    if (item.street.length != 0) {
+        [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", item.street]];
     }
-    if ([dict objectForKey:@"number"]) {
-        [arr addObject:[NSString stringWithFormat:@"husnr=%@", [dict objectForKey:@"number"]]];
+    if (item.number.length != 0) {
+        [arr addObject:[NSString stringWithFormat:@"husnr=%@", item.number]];
     }
-    if ([dict objectForKey:@"city"]) {
-        [arr addObject:[NSString stringWithFormat:@"postdist=*%@*", [dict objectForKey:@"city"]]];
+    if (item.city.length != 0) {
+        [arr addObject:[NSString stringWithFormat:@"postdist=*%@*", item.city]];
     }
-    if ([dict objectForKey:@"zip"]) {
-        [arr addObject:[NSString stringWithFormat:@"postnr=%@", [dict objectForKey:@"zip"]]];
+    if (item.zip.length != 0) {
+        [arr addObject:[NSString stringWithFormat:@"postnr=%@", item.zip]];
     }
     
     s = [arr componentsJoinedByString:@"&"];
@@ -149,61 +126,26 @@
         } else if ([(NSArray*)res count] == 0) {
             handler(@[], [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
         } else {
-            NSString* nameKey2= @"vej_navn";
-            NSString* zipKey= @"postdistrikt_kode";
-            NSString* houseKey= @"husnr";
-            NSString* distanceKey= @"afstand_afstand";
-            NSString* municipalityKey= @"postdistrikt_navn";
-            
-            NSMutableArray * arr = [NSMutableArray array];
             NSDictionary* json= (NSDictionary*)res;
             NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
             [set addCharactersInString:@","];
-            for (NSString* key in json.allKeys) {
-                if ([key isEqualToString:@"features"]) {
-                    NSArray* features= [json objectForKey:key]; // array of features (dictionaries)
-                    for(NSDictionary* feature in features){
-                        NSMutableDictionary * val = [NSMutableDictionary dictionaryWithDictionary: @{}];
-                        
-                        
-                        NSDictionary* attributes=[feature objectForKey:@"properties"];
-                        NSArray* geometryInfo= [[feature objectForKey:@"geometry"] objectForKey:@"coordinates"];
-                        [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
-                        [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
-                        
-                        
-                        NSString* streetName= [attributes objectForKey:nameKey2];
-                        if(!streetName) {
-                            continue;
-                        }
-                        NSString* municipalityName= [attributes objectForKey:municipalityKey];
-                        if (!municipalityName) {
-                            municipalityName= @"";
-                        }
-                        
-                        NSString* municipalityCode= [attributes objectForKey:zipKey];
-                        if (!municipalityCode) {
-                            municipalityCode= @"";
-                        }
-                        
-                        NSString* houseNumber = [NSString stringWithFormat:@"%@", [attributes objectForKey:houseKey]];
-                        
-                        double distance = [[attributes objectForKey:distanceKey] doubleValue];
-                        [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                        
-                        NSDictionary * dict = @{
-                                                (NSString *)kABPersonAddressStreetKey : [NSString stringWithFormat:@"%@ %@", streetName, houseNumber],
-                                                (NSString *)kABPersonAddressZIPKey : municipalityCode,
-                                                (NSString *)kABPersonAddressCityKey : municipalityName,
-                                                (NSString *)kABPersonAddressCountryKey : @"Denmark"
-                                                };
-                        MKPlacemark * pl = [[MKPlacemark alloc]
-                                            initWithCoordinate:CLLocationCoordinate2DMake([[val objectForKey:@"lat"] doubleValue], [[val objectForKey:@"long"] doubleValue])
-                                            addressDictionary:dict];
-                        
-                        [arr addObject:pl];
-                    }
-                }
+            NSMutableArray * arr = [NSMutableArray array];
+            
+            for(NSDictionary* feature in json[@"features"]){
+                KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+                
+                NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
+                item.name = formattedAddress;
+                item.address = formattedAddress;
+                
+                NSDictionary * dict = @{
+                                        (NSString *)kABPersonAddressStreetKey : [NSString stringWithFormat:@"%@ %@", item.street, item.number],
+                                        (NSString *)kABPersonAddressZIPKey : item.zip,
+                                        (NSString *)kABPersonAddressCityKey : item.city,
+                                        (NSString *)kABPersonAddressCountryKey : @"Denmark"
+                                        };
+                MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
+                [arr addObject:pl];
             }
             handler(arr, nil);
         }
@@ -212,11 +154,11 @@
 
 
 + (void)kortGeocode:(NSString*)str completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler{
-    NSDictionary * d = [SMAddressParser parseAddress:str];
-    if ([d objectForKey:@"number"] == nil && [d objectForKey:@"city"] == nil && [d objectForKey:@"zip"] == nil) {
+    NSObject<SearchListItem> *item = [SMAddressParser parseAddress:str];
+    if (item.number.length == 0 && item.city.length == 0 && item.zip.length == 0) {
         [self kortPlaceGeocode:str completionHandler:handler];
     } else {
-        [self kortAddressGeocode:d completionHandler:handler];
+        [self kortAddressGeocode:item completionHandler:handler];
     }
 }
 
@@ -243,16 +185,23 @@
         NSString * subtitle = @"";
         NSMutableArray * arr = [NSMutableArray array];
         if ([placemarks count] > 0) {
-            MKPlacemark * d = [placemarks objectAtIndex:0];
-            title = [NSString stringWithFormat:@"%@", [[d addressDictionary] objectForKey:@"Street"]?[[d addressDictionary] objectForKey:@"Street"]:@""];
-            subtitle = [NSString stringWithFormat:@"%@ %@", [[d addressDictionary] objectForKey:@"ZIP"]?[[d addressDictionary] objectForKey:@"ZIP"]:@"", [[d addressDictionary] objectForKey:@"City"]?[[d addressDictionary] objectForKey:@"City"]:@""];
-            for (MKPlacemark* d in placemarks) {
+            MKPlacemark * placemark = [placemarks objectAtIndex:0];
+            NSString *street = [placemark addressDictionary][@"Street"] ?: @"";
+            title = street;
+            NSString *zip = [placemark addressDictionary][@"ZIP"] ?: @"";
+            NSString *city = [placemark addressDictionary][@"City"] ?: @"";
+            subtitle = [NSString stringWithFormat:@"%@ %@", zip, city];
+            for (MKPlacemark* localPlacemark in placemarks) {
+                NSString *street = [localPlacemark addressDictionary][@"Street"] ?: @"";
+                title = street;
+                NSString *zip = [localPlacemark addressDictionary][@"ZIP"] ?: @"";
+                NSString *city = [localPlacemark addressDictionary][@"City"] ?: @"";
                 [arr addObject:@{
-                 @"street" : [[d addressDictionary] objectForKey:@"Street"]?[[d addressDictionary] objectForKey:@"Street"]:@"",
-                 @"house_number" : @"",
-                 @"zip" : [[d addressDictionary] objectForKey:@"ZIP"]?[[d addressDictionary] objectForKey:@"ZIP"]:@"",
-                 @"city" : [[d addressDictionary] objectForKey:@"City"]?[[d addressDictionary] objectForKey:@"City"]:@""
-                 }];
+                                 @"street" : street,
+                                 @"house_number" : @"",
+                                 @"zip" : zip,
+                                 @"city" : city
+                                 }];
             }
         }
         handler(@{@"title" : title, @"subtitle" : subtitle, @"near": arr}, nil);
@@ -282,19 +231,20 @@
                 NSString* title = @"";
                 NSString* subtitle = @"";
                 if ([(NSArray*)res count] > 0) {
-                    NSDictionary* d = [res objectAtIndex:0];
-                    title = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"]];
-                    subtitle = [NSString stringWithFormat:@"%@ %@", [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]];
+                    OiorestItem *item = [[OiorestItem alloc] initWithJsonDictionary:res[0]];
+                    title = [NSString stringWithFormat:@"%@ %@", item.street, item.number];
+                    subtitle = [NSString stringWithFormat:@"%@ %@", item.zip, item.city];
                 }
                 for (NSDictionary* d in res) {
+                    OiorestItem *item = [[OiorestItem alloc] initWithJsonDictionary:d];
                     [arr addObject:@{
-                     @"street" : [[d objectForKey:@"vejnavn"] objectForKey:@"navn"],
-                     @"house_number" : [d objectForKey:@"husnr"],
-                     @"zip" : [[d objectForKey:@"postnummer"] objectForKey:@"nr"],
-                     @"city" : [[d objectForKey:@"kommune"] objectForKey:@"navn"]
-                     }];
+                                     @"street" : item.street,
+                                     @"house_number" : item.number,
+                                     @"zip" : item.zip,
+                                     @"city" : item.city
+                                     }];
                 }
-                 handler(@{@"title" : title, @"subtitle" : subtitle, @"near": arr}, nil);
+                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": arr}, nil);
             } else {
                 handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
             }
@@ -325,30 +275,56 @@
                     return;
                 }
                 NSDictionary * json = (NSDictionary*)res;
+            
+                NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
+                [set addCharactersInString:@","];
+                NSMutableArray *places = [NSMutableArray array];
                 
-                NSArray * x = [[json objectForKey:@"features"] sortedArrayUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
-                    return [[[obj1 objectForKey:@"properties"] objectForKey:@"afstand_afstand"] compare:[[obj2 objectForKey:@"properties"] objectForKey:@"afstand_afstand"]];
+                for(NSDictionary* feature in json[@"features"]){
+                    KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+                    
+                    NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
+                    item.name = formattedAddress;
+                    item.address = formattedAddress;
+                    
+                    NSDictionary * dict = @{
+                                            (NSString *)kABPersonAddressStreetKey : item.name
+                                            };
+                    MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
+                    [places addObject:pl];
+                }
+                
+                NSArray *sortedPlaces = [places sortedArrayUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2){
+                    long first= obj1.distance;
+                    long second= obj2.distance;
+                    
+                    if(first<second)
+                        return NSOrderedAscending;
+                    else if(first>second)
+                        return NSOrderedDescending;
+                    else
+                        return NSOrderedSame;
                 }];
+              
                 
                 NSMutableArray * arr = [NSMutableArray array];
 
                 NSString* title = @"";
                 NSString* subtitle = @"";
-                if ([x count] > 0) {
-                    NSDictionary* d = [[x objectAtIndex:0] objectForKey:@"properties"];
-                    title = [NSString stringWithFormat:@"%@ %@", [d objectForKey:@"vej_navn"], [d objectForKey:@"husnr"]];
-                    subtitle = [NSString stringWithFormat:@"%@ %@", [d objectForKey:@"postdistrikt_kode"], [d objectForKey:@"postdistrikt_navn"]];
+                if ([sortedPlaces count] > 0) {
+                    KortforItem *item = sortedPlaces.firstObject;
+                    title = [NSString stringWithFormat:@"%@ %@", item.street, item.number];
+                    subtitle = [NSString stringWithFormat:@"%@ %@", item.zip, item.city];
                 }
-                for (NSDictionary* d1 in x) {
-                    NSDictionary* d = [d1 objectForKey:@"properties"];
+                for (KortforItem *item in sortedPlaces) {
                     [arr addObject:@{
-                                     @"street" : [d objectForKey:@"vej_navn"],
-                                     @"house_number" : [d objectForKey:@"husnr"],
-                                     @"zip" : [d objectForKey:@"postdistrikt_kode"],
-                                     @"city" : [d objectForKey:@"postdistrikt_navn"]
+                                     @"street" : item.street,
+                                     @"house_number" : item.number,
+                                     @"zip" : item.zip,
+                                     @"city" : item.city
                                      }];
                 }
-                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": arr}, nil);
+                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": places}, nil);
             } else {
                 handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
             }

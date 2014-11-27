@@ -16,21 +16,21 @@
 @implementation SMKMSAddressOperation
 
 - (void)startOperation {
-    self.searchString = [self.startParams objectForKey:@"street"];
+    self.searchString = self.startItem.street;
     
     NSString * s = @"";
     NSMutableArray * arr = [NSMutableArray array];
-    if ([self.startParams objectForKey:@"street"]) {
-        [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", [self.startParams objectForKey:@"street"]]];
+    if (self.startItem.street && ![self.startItem.street isEqualToString:@""]) {
+        [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", self.startItem.street]];
     }
-    if ([self.startParams objectForKey:@"number"]) {
-        [arr addObject:[NSString stringWithFormat:@"husnr=%@", [self.startParams objectForKey:@"number"]]];
+    if (self.startItem.number && ![self.startItem.number isEqualToString:@""]) {
+        [arr addObject:[NSString stringWithFormat:@"husnr=%@", self.startItem.number]];
     }
-    if ([self.startParams objectForKey:@"city"]) {
-        [arr addObject:[NSString stringWithFormat:@"postdist=*%@*", [self.startParams objectForKey:@"city"]]];
+    if (self.startItem.city && ![self.startItem.city isEqualToString:@""]) {
+        [arr addObject:[NSString stringWithFormat:@"postdist=*%@*", self.startItem.city]];
     }
-    if ([self.startParams objectForKey:@"zip"]) {
-        [arr addObject:[NSString stringWithFormat:@"postnr=%@", [self.startParams objectForKey:@"zip"]]];
+    if (self.startItem.zip && ![self.startItem.zip isEqualToString:@""]) {
+        [arr addObject:[NSString stringWithFormat:@"postnr=%@", self.startItem.zip]];
     }
     
     s = [arr componentsJoinedByString:@"&"];
@@ -49,92 +49,32 @@
     
 }
 
-- (void)processResult:(id)result {
-    NSString* nameKey2= @"vej_navn";
-    NSString* zipKey= @"postdistrikt_kode";
-    NSString* houseKey= @"husnr";
-    NSString* distanceKey= @"afstand_afstand";
-    NSString* municipalityKey= @"postdistrikt_navn";
-    
+- (void)processResult:(id)result {    
     NSDictionary* json= (NSDictionary*)result;
     NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
     [set addCharactersInString:@","];
     NSMutableArray* addressArray= [NSMutableArray new];
-    for (NSString* key in json.allKeys) {
-        if ([key isEqualToString:@"features"]) {
-            NSArray* features= [json objectForKey:key]; // array of features (dictionaries)
-            for(NSDictionary* feature in features){
-                NSMutableDictionary * val = [NSMutableDictionary dictionaryWithDictionary: @{@"source" : @"autocomplete",
-                                                                                             @"subsource" : @"oiorest-address",
-                                                                                             @"order" : @2
-                                                                                             }];
-                
-                
-                NSDictionary* attributes=[feature objectForKey:@"properties"];
-                NSArray* geometryInfo= [[feature objectForKey:@"geometry"] objectForKey:@"coordinates"];
-                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
-                [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
-                
-            
-                NSString* streetName= [attributes objectForKey:nameKey2];
-                if(!streetName) {
-                    continue;
-                }
-                NSString* municipalityName= [attributes objectForKey:municipalityKey];
-                if (!municipalityName) {
-                    municipalityName= @"";
-                }
-                
-                NSString* municipalityCode= [attributes objectForKey:zipKey];
-                if (!municipalityCode) {
-                    municipalityCode= @"";
-                }
-                
-                NSString* houseNumber = [NSString stringWithFormat:@"%@", [attributes objectForKey:houseKey]];
-                
-                
-                [val setObject:[[NSString stringWithFormat:@"%@ %@, %@ %@",
-                                streetName,
-                                houseNumber,
-                                municipalityCode,
-                                municipalityName] stringByTrimmingCharactersInSet:set]
-                        forKey:@"name"];
-                [val setObject:[[NSString stringWithFormat:@"%@ %@, %@ %@",
-                                streetName,
-                                houseNumber,
-                                municipalityCode,
-                                municipalityName] stringByTrimmingCharactersInSet:set]
-                        forKey:@"address"];
-                [val setObject:streetName forKey:@"street"];
-                [val setObject:municipalityCode forKey:@"zip"];
-                
-                double distance = [[attributes objectForKey:distanceKey] doubleValue];
-                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[[NSString stringWithFormat:@"%@ %@, %@ %@",
-                                                                                        streetName,
-                                                                                        houseNumber,
-                                                                                        municipalityCode,
-                                                                                        municipalityName] stringByTrimmingCharactersInSet:set]
-                                                                            andAddress:[[NSString stringWithFormat:@"%@ %@, %@ %@",
-                                                                                                                      streetName,
-                                                                                                                      houseNumber,
-                                                                                                                      municipalityCode,
-                                                                                                                      municipalityName] stringByTrimmingCharactersInSet:set]
-                                                                              andTerms:self.searchString]] forKey:@"relevance"];
-                
-                
-                [val setObject:[NSString stringWithFormat:@"%@ %@", streetName, houseNumber] forKey:@"line1"];
-                [val setObject:[NSString stringWithFormat:@"%@ %@", municipalityCode, municipalityName] forKey:@"line2"];
-                
-                [addressArray addObject:val];
-            }
-            
-        }
+    for(NSDictionary *feature in json[@"features"]){
+        KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+        
+        NSInteger relevance = [SMRouteUtils pointsForName:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
+                                                            item.zip,
+                                                            item.city] stringByTrimmingCharactersInSet:set]
+                                               andAddress:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
+                                                            item.zip,
+                                                            item.city] stringByTrimmingCharactersInSet:set]
+                                                 andTerms:self.searchString];
+        item.relevance = relevance;
+        
+        NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
+        item.name = formattedAddress;
+        item.address = formattedAddress;
+        
+        [addressArray addObject:item];
     }
-    
-    [addressArray sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2){
-        long first= ((NSNumber*)[obj1 objectForKey:@"distance"]).longValue;
-        long second= ((NSNumber*)[obj2 objectForKey:@"distance"]).longValue;
+    [addressArray sortUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2){
+        long first= obj1.distance;
+        long second= obj2.distance;
         
         if(first<second)
             return NSOrderedAscending;

@@ -36,22 +36,24 @@
 }
 
 - (void)addTasks:(NSString *)srchString {
-    NSDictionary * d = [SMAddressParser parseAddress:srchString];
-    if ([d objectForKey:@"number"] == nil && [d objectForKey:@"city"] == nil && [d objectForKey:@"zip"] == nil) {
-        [self addKMSPlacesTask:@{@"params" : d}];
-        [self addKMSStreetTask:@{@"params" : d}];
+    UnknownSearchListItem *item = [SMAddressParser parseAddress:srchString];
+    if ((item.number == nil || [item.number isEqualToString:@""]) &&
+        (item.city == nil || [item.city isEqualToString:@""]) &&
+        (item.zip == nil || [item.zip isEqualToString:@""])) {
+        [self addKMSPlacesTask:item];
+        [self addKMSStreetTask:item];
     } else {
-        [self addKMSAddressTask:@{@"params" : d}];
+        [self addKMSAddressTask:item];
     }
     
-    if ([d objectForKey:@"number"] == nil && srchString.length > 2) {
-        [self addFoursquareTask:@{@"params" : d}];
+    if ((item.number == nil || [item.number isEqualToString:@""]) && srchString.length > 2) {
+        [self addFoursquareTask:item];
     }
 }
 
-- (SMFoursquareOperation*)addFoursquareTask:(NSDictionary*)taskDict {
+- (SMFoursquareOperation*)addFoursquareTask:(NSObject<SearchListItem> *)item {
 //    @synchronized (self.queue) {
-        SMFoursquareOperation * task = [[SMFoursquareOperation alloc] initWithData:taskDict andDelegate:self];
+        SMFoursquareOperation * task = [[SMFoursquareOperation alloc] initWithItem:item andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
@@ -59,9 +61,9 @@
     return nil;
 }
 
-- (SMKMSStreetOperation*)addKMSStreetTask:(NSDictionary*)taskDict {
+- (SMKMSStreetOperation*)addKMSStreetTask:(NSObject<SearchListItem> *)item {
 //    @synchronized (self.queue) {
-        SMKMSStreetOperation * task = [[SMKMSStreetOperation alloc] initWithData:taskDict andDelegate:self];
+        SMKMSStreetOperation * task = [[SMKMSStreetOperation alloc] initWithItem:item andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
@@ -69,9 +71,9 @@
     return nil;
 }
 
-- (SMKMSAddressOperation*)addKMSAddressTask:(NSDictionary*)taskDict {
+- (SMKMSAddressOperation*)addKMSAddressTask:(NSObject<SearchListItem> *)item {
 //    @synchronized (self.queue) {
-        SMKMSAddressOperation * task = [[SMKMSAddressOperation alloc] initWithData:taskDict andDelegate:self];
+        SMKMSAddressOperation * task = [[SMKMSAddressOperation alloc] initWithItem:item andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;
@@ -79,9 +81,9 @@
     return nil;
 }
 
-- (SMKMSPlacesOperation*)addKMSPlacesTask:(NSDictionary*)taskDict {
+- (SMKMSPlacesOperation*)addKMSPlacesTask:(NSObject<SearchListItem> *)item {
 //    @synchronized (self.queue) {
-        SMKMSPlacesOperation * task = [[SMKMSPlacesOperation alloc] initWithData:taskDict andDelegate:self];
+        SMKMSPlacesOperation * task = [[SMKMSPlacesOperation alloc] initWithItem:item andDelegate:self];
         [task setQueuePriority:NSOperationQueuePriorityNormal];
         [self.queue addOperation:task];
         return task;

@@ -16,6 +16,7 @@ import CoreLocation
     var name: String
     var address: String
     var street: String
+    var number: String = ""
     var order: Int = 2
     var zip: String
     var city: String
@@ -24,7 +25,6 @@ import CoreLocation
     var relevance: Int = 0
     
     var distance: Double = 0
-    var number: Int? = nil
     
     init(jsonDictionary: AnyObject) {
         let json = JSON(jsonDictionary)
@@ -40,6 +40,15 @@ import CoreLocation
         let longitude = jsonLocation["lng"].doubleValue
         location = CLLocation(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
         
+        let extraItem = SMAddressParser.parseAddress(address)
         
+        number = extraItem.number
+        if extraItem.street != "" {
+            street = extraItem.street
+        }
+    }
+    
+    override var description: String {
+        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location.coordinate.latitude), \(location.coordinate.longitude)), Order: \(order), Relevance: \(relevance), Distance: \(distance)"
     }
 }

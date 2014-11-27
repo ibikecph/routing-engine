@@ -15,6 +15,7 @@
 #import "SMGPSUtil.h"
 //#import "SMUtil.h"
 #import "SMRouteUtils.h"
+#import "SMRouteLocation.h"
 
 #define MAX_DISTANCE_FROM_PATH 30 // in meters
 
@@ -357,13 +358,13 @@
 
 - (CLLocation *) getFirstVisitedLocation {
     if (self.visitedLocations && self.visitedLocations.count > 0)
-        return [[self.visitedLocations objectAtIndex:0] objectForKey:@"location"];
+        return ((SMRouteLocation *)self.visitedLocations.firstObject).location;
     return NULL;
 }
 
 - (CLLocation *) getLastVisitedLocation {
     if (self.visitedLocations && self.visitedLocations.count > 0)
-        return [[self.visitedLocations lastObject] objectForKey:@"location"];
+        return ((SMRouteLocation *)self.visitedLocations.lastObject).location;
     return NULL;
 }
 
@@ -410,8 +411,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     int value = 0;
     CLLocationCoordinate2D prevCoordinate = CLLocationCoordinate2DMake(0, 0);
     
-    for (NSDictionary *coordinateValue in coordinates) {
-        CLLocationCoordinate2D coordinate = ((CLLocation*)[coordinateValue objectForKey:@"location"]).coordinate;
+    for (SMRouteLocation *coordinateValue in coordinates) {
+        CLLocationCoordinate2D coordinate = coordinateValue.location.coordinate;
         
         // Encode latitude
         val = round((coordinate.latitude - prevCoordinate.latitude) * [SMRouteSettings sharedInstance].route_polyline_precision);
@@ -444,7 +445,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 //    SMRoute *route = [[SMRoute alloc] init];
     @synchronized(self.waypoints) {
-        self.waypoints = [SMGPSUtil decodePolyline:[jsonRoot objectForKey:@"route_geometry"]];
+        self.waypoints = [SMGPSUtil decodePolyline:jsonRoot[@"route_geometry"]];
     }
 
     if (self.waypoints.count < 2)
@@ -456,20 +457,20 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     @synchronized(self.pastTurnInstructions) {
         self.pastTurnInstructions = [NSMutableArray array];
     }
-    self.estimatedTimeForRoute = [[[jsonRoot objectForKey:@"route_summary"] objectForKey:@"total_time"] integerValue];
-    self.estimatedRouteDistance = [[[jsonRoot objectForKey:@"route_summary"] objectForKey:@"total_distance"] integerValue];
+    self.estimatedTimeForRoute = [jsonRoot[@"route_summary"][@"total_time"] integerValue];
+    self.estimatedRouteDistance = [jsonRoot[@"route_summary"][@"total_distance"] integerValue];
     self.routeChecksum = nil;
     self.destinationHint = nil;
     
-    if ([jsonRoot objectForKey:@"hint_data"] && [[jsonRoot objectForKey:@"hint_data"] objectForKey:@"checksum"]) {
-        self.routeChecksum = [NSString stringWithFormat:@"%@", [[jsonRoot objectForKey:@"hint_data"] objectForKey:@"checksum"]];
+    if (jsonRoot[@"hint_data"] && jsonRoot[@"hint_data"][@"checksum"]) {
+        self.routeChecksum = [NSString stringWithFormat:@"%@", jsonRoot[@"hint_data"][@"checksum"]];
     }
     
-    if ([jsonRoot objectForKey:@"hint_data"] && [[jsonRoot objectForKey:@"hint_data"] objectForKey:@"locations"] && [[[jsonRoot objectForKey:@"hint_data"] objectForKey:@"locations"] isKindOfClass:[NSArray class]]) {
-        self.destinationHint = [NSString stringWithFormat:@"%@", [[[jsonRoot objectForKey:@"hint_data"] objectForKey:@"locations"] lastObject]];
+    if (jsonRoot[@"hint_data"] && jsonRoot[@"hint_data"][@"locations"] && [jsonRoot[@"hint_data"][@"locations"] isKindOfClass:[NSArray class]]) {
+        self.destinationHint = [NSString stringWithFormat:@"%@", [jsonRoot[@"hint_data"][@"locations"] lastObject]];
     }
     
-    NSArray *routeInstructions = [jsonRoot objectForKey:@"route_instructions"];
+    NSArray *routeInstructions = jsonRoot[@"route_instructions"];
     if (routeInstructions && routeInstructions.count > 0) {
         int prevlengthInMeters = 0;
         NSString *prevlengthWithUnit = @"";
@@ -539,10 +540,10 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.longestDistance = 0.0f;
         self.longestStreet = @"";
         
-        if ([[jsonRoot objectForKey:@"route_name"] isKindOfClass:[NSArray class]] && [[jsonRoot objectForKey:@"route_name"] count] > 0) {
-            self.longestStreet = [[jsonRoot objectForKey:@"route_name"] objectAtIndex:0];
+        if ([jsonRoot[@"route_name"] isKindOfClass:[NSArray class]] && [jsonRoot[@"route_name"] count] > 0) {
+            self.longestStreet = [jsonRoot[@"route_name"] firstObject];
         }
-//        self.longestStreet = [[jsonRoot objectForKey:@"route_name"] componentsJoinedByString:@", "];
+//        self.longestStreet = [jsonRoot[@"route_name"] componentsJoinedByString:@", "];
         if (self.longestStreet == nil || [[self.longestStreet stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
             for (int i = 1; i < self.turnInstructions.count - 1; i++) {
                 SMTurnInstruction * inst = [self.turnInstructions objectAtIndex:i];
@@ -580,7 +581,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.tripDistance = 0.0;
     }
     if (self.visitedLocations.count > 0) {
-        self.tripDistance += [loc distanceFromLocation:[[self.visitedLocations lastObject] objectForKey:@"location"]];
+        self.tripDistance += [loc distanceFromLocation:((SMRouteLocation *)self.visitedLocations.lastObject).location];
     }
 
     if (self.distanceLeft < 0.0) {
@@ -647,10 +648,11 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     CGFloat distance = 0.0f;
     
     if ([self.visitedLocations count] > 1) {
-        CLLocation * startLoc = [[self.visitedLocations objectAtIndex:0]  objectForKey:@"location"];
+        CLLocation * startLoc = ((SMRouteLocation *)self.visitedLocations.firstObject).location;
         for (int i = 1; i < [self.visitedLocations count]; i++) {
-            distance += [[[self.visitedLocations objectAtIndex:i] objectForKey:@"location"] distanceFromLocation:startLoc];
-            startLoc = [[self.visitedLocations objectAtIndex:i] objectForKey:@"location"];
+            CLLocation *loc = ((SMRouteLocation *)self.visitedLocations[i]).location;
+            distance += [loc distanceFromLocation:startLoc];
+            startLoc = loc;
         }
     }
     
@@ -663,8 +665,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     CGFloat distance = [self calculateDistanceTraveled];
     CGFloat avgSpeed = 0.0f;
     if ([self.visitedLocations count] > 1) {
-        NSDate * startLoc = [[self.visitedLocations objectAtIndex:0] objectForKey:@"date"];
-        NSDate * endLoc = [[self.visitedLocations lastObject] objectForKey:@"date"];
+        NSDate * startLoc = ((SMRouteLocation *)self.visitedLocations.firstObject).date;
+        NSDate * endLoc = ((SMRouteLocation *)self.visitedLocations.lastObject).date;
         if ([endLoc timeIntervalSinceDate:startLoc] > 0) {
             avgSpeed = distance / ([endLoc timeIntervalSinceDate:startLoc]);            
         }
@@ -676,8 +678,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 - (NSString*)timePassed {
     if ([self.visitedLocations count] > 1) {
-        NSDate * startDate = [[self.visitedLocations objectAtIndex:0] objectForKey:@"date"];
-        NSDate * endDate = [[self.visitedLocations lastObject] objectForKey:@"date"];
+        NSDate * startDate = ((SMRouteLocation *)self.visitedLocations.firstObject).date;
+        NSDate * endDate = ((SMRouteLocation *)self.visitedLocations.lastObject).date;
         return formatTimePassed(startDate, endDate);
     }
     return @"";
@@ -691,8 +693,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     CGFloat avgSpeed = [self calculateAverageSpeed];
     CGFloat timeSpent = 0.0f;
     if ([self.visitedLocations count] > 1) {
-        NSDate * startLoc = [[self.visitedLocations objectAtIndex:0] objectForKey:@"date"];
-        NSDate * endLoc = [[self.visitedLocations lastObject] objectForKey:@"date"];
+        NSDate * startLoc = ((SMRouteLocation *)self.visitedLocations.firstObject).date;
+        NSDate * endLoc = ((SMRouteLocation *)self.visitedLocations.lastObject).date;
         timeSpent = [endLoc timeIntervalSinceDate:startLoc] / 3600.0f;
     }
 
@@ -739,7 +741,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         NSString * response = [[NSString alloc] initWithData:req.responseData encoding:NSUTF8StringEncoding];
         if (response) {
             id jsonRoot = [NSJSONSerialization JSONObjectWithData:req.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithString:response];
-            if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([[jsonRoot objectForKey:@"status"] intValue] != 0)) {
+            if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([jsonRoot[@"status"] intValue] != 0)) {
                 if (self.delegate) {
                     [self.delegate routeNotFound];
                 };
@@ -758,7 +760,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 
                 
                 id jsonRoot = [NSJSONSerialization JSONObjectWithData:req.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithString:response];
-                if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([[jsonRoot objectForKey:@"status"] intValue] != 0)) {
+                if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([jsonRoot[@"status"] intValue] != 0)) {
                     if (self.delegate) {
                         dispatch_async(dispatch_get_main_queue(), ^{
                             [self.delegate routeRecalculationDone];
@@ -962,10 +964,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         [self updateDistances:loc];
         if (!self.visitedLocations)
             self.visitedLocations = [NSMutableArray array];
-        [self.visitedLocations addObject:@{
-                                           @"location" : loc,
-                                           @"date" : [NSDate date]
-                                           }];
+        [self.visitedLocations addObject:[[SMRouteLocation alloc] initWithLocation:loc date:[NSDate date]]];
         self.distanceFromRoute = MAXFLOAT;
         isTooFar = [self findNearestRouteSegmentForLocation:loc withMaxDistance:maxD];
         [self updateSegmentBasedOnWaypoint];
@@ -981,7 +980,6 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             return;
         }
     }
-    
     
     // Check if we are finishing:
     double distanceToFinish = MIN([self.lastCorrectedLocation distanceFromLocation:[self getEndLocation]], [loc distanceFromLocation:[self getEndLocation]]);

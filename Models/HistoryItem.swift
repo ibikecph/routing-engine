@@ -15,24 +15,21 @@ import CoreLocation
     var type: SearchListItemType = .History
     var name: String
     var address: String
-    var street: String
+    var street: String = ""
+    var number: String = ""
     var order: Int = 1
-    var zip: String
-    var city: String
-    var country: String
+    var zip: String = ""
+    var city: String = ""
+    var country: String = ""
     var location: CLLocation = CLLocation()
     var relevance: Int = 0
     
     var startDate: NSDate?
     var endDate: NSDate?
     
-    init(name: String, address: String? = nil, street: String, zip: String, city: String = "", country: String = "", location: CLLocation, startDate: NSDate? = nil, endDate: NSDate? = nil) {
+    init(name: String, address: String? = nil, location: CLLocation, startDate: NSDate? = nil, endDate: NSDate? = nil) {
         self.name = name
         self.address = address ?? name
-        self.street = street
-        self.zip = zip
-        self.city = city
-        self.country = country
         self.location = location
         self.startDate = startDate
         self.endDate = endDate
@@ -42,11 +39,37 @@ import CoreLocation
         self.name = other.name
         self.address = other.address
         self.street = other.street
+        self.number = other.number
         self.zip = other.zip
         self.city = other.city
         self.country = other.country
         self.location = other.location
         self.startDate = startDate
         self.endDate = endDate
+    }
+    
+    init(plistDictionary: NSDictionary) {
+        let json = JSON(plistDictionary)
+        
+        name = json["name"].stringValue
+        address = json["address"].stringValue
+        startDate = NSKeyedUnarchiver.unarchiveObjectWithData(plistDictionary["startDate"] as NSData) as? NSDate
+        endDate = NSKeyedUnarchiver.unarchiveObjectWithData(plistDictionary["endDate"] as NSData) as? NSDate
+        
+        // Location
+        let latitude = json["lat"].doubleValue
+        let longitude = json["long"].doubleValue
+        location = CLLocation(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
+    }
+    
+    func plistRepresentation() -> [String : AnyObject] {
+        return [
+            "name" :  self.name,
+            "address" : self.address,
+            "startDate" : NSKeyedArchiver.archivedDataWithRootObject(self.startDate!),
+            "endDate" : NSKeyedArchiver.archivedDataWithRootObject(self.endDate!),
+            "lat" : self.location.coordinate.latitude,
+            "long" : self.location.coordinate.longitude
+        ]
     }
 }

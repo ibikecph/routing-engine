@@ -46,12 +46,13 @@ typedef enum {
     self.resultsArr = [NSMutableArray array];
     [self getFoursquareAutocomplete];
     [self getKortforsyningenAutocomplete];
-    NSDictionary * d = [SMAddressParser parseAddress:self.srchString];
-    if ([d objectForKey:@"number"] == nil && [d objectForKey:@"city"] == nil && [d objectForKey:@"zip"] == nil) {
+    UnknownSearchListItem * item = [SMAddressParser parseAddress:self.srchString];
+    if (item.number == nil && item.city == nil && item.zip == nil) {
         [self getKortforsyningenPlacesSearch];
     }
 }
 
+// TODO: Is this code unused
 - (void)getOiorestAutocomplete {
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://geo.oiorest.dk/adresser.json?q=%@&maxantal=50", [self.srchString urlEncode]]]];
     debugLog(@"%@", req);
@@ -65,27 +66,25 @@ typedef enum {
                     [terms addObject:str];
                 }
             }
-            for (NSDictionary* d in res) {
-                if ([[[d objectForKey:@"postnummer"] objectForKey:@"nr"] integerValue] >= 1000 && [[[d objectForKey:@"postnummer"] objectForKey:@"nr"] integerValue] <= 2999) {
-                    [arr addObject:@{
-                     @"name" : [NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]],
-                     @"address" : [NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]],
-                     @"street" : [[d objectForKey:@"vejnavn"] objectForKey:@"navn"],
-                     @"zip" : [[d objectForKey:@"postnummer"] objectForKey:@"nr"],
-                     @"city" : [[d objectForKey:@"kommune"] objectForKey:@"navn"],
-                     @"country" : @"",
-                     @"source" : @"autocomplete",
-                     @"subsource" : @"oiorest",
-                     @"relevance" : [NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]] andAddress:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark", [[d objectForKey:@"vejnavn"] objectForKey:@"navn"], [d objectForKey:@"husnr"], [[d objectForKey:@"postnummer"] objectForKey:@"nr"], [[d objectForKey:@"kommune"] objectForKey:@"navn"]] andTerms:self.srchString]],
-                     @"order" : @2
-                     }];
+            for (NSDictionary *d in res) {
+                OiorestItem *item = [[OiorestItem alloc] initWithJsonDictionary:d];
+                if (item.zip.integerValue >= 1000 && item.zip.integerValue <= 2999) {
+                    [arr addObject:item];
                 }
             }
             dispatch_async(dispatch_get_main_queue(), ^{
                 @synchronized(self.resultsArr) {
                     [self.resultsArr addObjectsFromArray:arr];
-                    [self.resultsArr sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2) {
-                        return [[obj1 objectForKey:@"order"] compare:[obj2 objectForKey:@"order"]];
+                    [self.resultsArr sortUsingComparator:^NSComparisonResult(FoursquareItem *obj1, FoursquareItem * obj2) {
+                        double d1 = obj1.distance;
+                        double d2 = obj2.distance;
+                        if (d1 > d2) {
+                            return NSOrderedDescending;
+                        } else if (d1 < d2) {
+                            return NSOrderedAscending;
+                        } else {
+                            return NSOrderedSame;
+                        }
                     }];
                     
                 }
@@ -108,78 +107,33 @@ typedef enum {
                 NSDictionary * res = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:nil];
                 NSMutableArray * arr = [NSMutableArray array];
                 
-                for (NSDictionary* d in [[res objectForKey:@"response"] objectForKey:@"minivenues"]) {
-                    if ([[d objectForKey:@"location"] objectForKey:@"lat"] && [[d objectForKey:@"location"] objectForKey:@"lng"]
-                        && (([[[d objectForKey:@"location"] objectForKey:@"lat"] doubleValue] != 0) || ([[[d objectForKey:@"location"] objectForKey:@"lng"] doubleValue] != 0))) {
-                        NSMutableArray * ar = [NSMutableArray array];
-                        NSMutableDictionary * dict = [NSMutableDictionary dictionaryWithDictionary:@{
-                                                      @"name" : [d objectForKey:@"name"],
-                                                      @"zip" : @"",
-                                                      @"lat" : [[d objectForKey:@"location"] objectForKey:@"lat"],
-                                                      @"long" : [[d objectForKey:@"location"] objectForKey:@"lng"],
-                                                      @"source" : @"autocomplete",
-                                                      @"subsource" : @"foursquare",
-                                                      @"order" : @3
-                                                      }];
-                        if ([d objectForKey:@"name"]) {
-                            [dict setValue:[d objectForKey:@"name"] forKey:@"name"];
+                for (NSDictionary* d in res[@"response"][@"minivenues"]) {
+                    FoursquareItem *item = [[FoursquareItem alloc] initWithJsonDictionary:d];
+                    item.relevance = [SMRouteUtils pointsForName:item.name andAddress:item.address andTerms:self.srchString];
+                    if (item.location.coordinate.latitude != 0 &&
+                        item.location.coordinate.longitude != 0) {
+                        item.distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:item.location];
+                        [arr addObject:item];
+                    }
+                    
+                    [arr sortUsingComparator:^NSComparisonResult(FoursquareItem *obj1, FoursquareItem * obj2) {
+                        double d1 = obj1.distance;
+                        double d2 = obj2.distance;
+                        if (d1 > d2) {
+                            return NSOrderedDescending;
+                        } else if (d1 < d2) {
+                            return NSOrderedAscending;
                         } else {
-                            [dict setValue:@"" forKey:@"name"];
+                            return NSOrderedSame;
                         }
-                        
-                        if ([[d objectForKey:@"location"] objectForKey:@"address"]) {
-                            [dict setValue:[[d objectForKey:@"location"] objectForKey:@"address"] forKey:@"street"];
-                            if ([[[[d objectForKey:@"location"] objectForKey:@"address"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                                [ar addObject:[[[d objectForKey:@"location"] objectForKey:@"address"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
-                            }
-                        } else {
-                            [dict setValue:@"" forKey:@"street"];
-                        }
-                        if ([[d objectForKey:@"location"] objectForKey:@"city"]) {
-                            [dict setValue:[[d objectForKey:@"location"] objectForKey:@"city"] forKey:@"city"];
-                            if ([[[[d objectForKey:@"location"] objectForKey:@"city"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                                [ar addObject:[[[d objectForKey:@"location"] objectForKey:@"city"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
-                            }
-                        } else {
-                            [dict setValue:@"" forKey:@"city"];
-                        }
-                        if ([[d objectForKey:@"location"] objectForKey:@"country"]) {
-                            [dict setValue:[[d objectForKey:@"location"] objectForKey:@"country"] forKey:@"country"];
-                            if ([[[[d objectForKey:@"location"] objectForKey:@"country"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""] == NO) {
-                                [ar addObject:[[[d objectForKey:@"location"] objectForKey:@"country"] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
-                            }
-                        } else {
-                            [dict setValue:@"" forKey:@"country"];
-                        }
-                        
-                        if ([d objectForKey:@"categories"] && [[d objectForKey:@"categories"] count] > 0) {
-                            NSDictionary * d2 = [[d objectForKey:@"categories"] objectAtIndex:0];
-                            if ([d2 objectForKey:@"icon"]) {
-                                NSString * s1 = [NSString stringWithFormat:@"%@%@", [[[d2 objectForKey:@"icon"] objectForKey:@"prefix"] stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"_"]], [[d2 objectForKey:@"icon"] objectForKey:@"suffix"]];
-                                [dict setObject:s1 forKey:@"icon"];
-                            }
-                            
-                        }
-                        
-                        
-                        [dict setObject:[ar componentsJoinedByString:@", "] forKey:@"address"];
-                        
-                        [dict setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[dict objectForKey:@"name"] andAddress:[dict objectForKey:@"address"] andTerms:self.srchString]] forKey:@"relevance"];
-                        
-                        if ([[dict objectForKey:@"address"] rangeOfString:@"København"].location != NSNotFound
-                            || [[dict objectForKey:@"address"] rangeOfString:@"Koebenhavn"].location != NSNotFound
-                            || [[dict objectForKey:@"address"] rangeOfString:@"Kobenhavn"].location != NSNotFound
-                            || [[dict objectForKey:@"address"] rangeOfString:@"Copenhagen"].location != NSNotFound
-                            || [[dict objectForKey:@"address"] rangeOfString:@"Frederiksberg"].location != NSNotFound
-                            || [[dict objectForKey:@"address"] rangeOfString:@"Valby"].location != NSNotFound
-                            ) {
-                            [arr addObject:dict];
-                        }
-                        
-                        
-                        [arr sortUsingComparator:^NSComparisonResult(NSDictionary * obj1, NSDictionary * obj2) {
-                            double d1 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj1 objectForKey:@"lat"] doubleValue] longitude:[[obj1 objectForKey:@"lat"] doubleValue]]];
-                            double d2 = [[SMLocationManager instance].lastValidLocation distanceFromLocation:[[CLLocation alloc] initWithLatitude:[[obj2 objectForKey:@"lat"] doubleValue] longitude:[[obj2 objectForKey:@"lat"] doubleValue]]];
+                    }];
+                }
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    @synchronized(self.resultsArr) {
+                        [self.resultsArr addObjectsFromArray:arr];
+                        [self.resultsArr sortUsingComparator:^NSComparisonResult(FoursquareItem* obj1, FoursquareItem* obj2) {
+                            double d1 = obj1.order;
+                            double d2 = obj2.order;
                             if (d1 > d2) {
                                 return NSOrderedDescending;
                             } else if (d1 < d2) {
@@ -187,14 +141,6 @@ typedef enum {
                             } else {
                                 return NSOrderedSame;
                             }
-                        }];
-                    }
-                }
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    @synchronized(self.resultsArr) {
-                        [self.resultsArr addObjectsFromArray:arr];
-                        [self.resultsArr sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2) {
-                            return [[obj1 objectForKey:@"order"] compare:[obj2 objectForKey:@"order"]];
                         }];
                     }
                     if (self.delegate) {
@@ -227,60 +173,35 @@ typedef enum {
             NSError* jsonError;
             
             if ([data length] > 0 && error == nil){
-                
-                
-                NSDictionary* json= [NSJSONSerialization JSONObjectWithData:data options:nil error:&error];
+                NSDictionary* json= [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
                 
                 NSLog(@"Received data %@", json);
                 if(!json){
                     NSLog(@"Response: %@",[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
                 }
                 
+                NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
+                [set addCharactersInString:@","];
+                
                 NSMutableArray* addressArray= [NSMutableArray new];
-                for (NSString* key in json.allKeys) {
-                    if ([key isEqualToString:@"features"]) {
-                        NSArray* features= [json objectForKey:key]; // array of features (dictionaries)
-                        for(NSDictionary* feature in features){
-                            NSMutableDictionary * val = [NSMutableDictionary dictionaryWithDictionary: @{@"source" : @"autocomplete",
-                                                                                                         @"subsource" : @"oiorest",
-                                                                                                         @"order" : @2
-                                                                                                         }];
-                            
-                            
-                            NSDictionary* attributes=[feature objectForKey:@"properties"];
-                            NSArray* geometryInfo= [feature objectForKey:@"bbox"];
-                            
-                            NSString* streetName= [attributes objectForKey:nameKey];
-                            if(!streetName) {
-                                continue;
-                            }
-                            
-                            [val setObject:streetName forKey:@"name"];
-                            [val setObject:streetName forKey:@"address"];
-                            [val setObject:streetName forKey:@"street"];
-                            
-                            double distance = 0;
-                            if ([[SMLocationManager instance] hasValidLocation]) {
-                                CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
-                                distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
-                                
-                            }
-                            
-                            [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:1] doubleValue]] forKey:@"lat"];
-                            [val setObject:[NSNumber numberWithDouble:[[geometryInfo objectAtIndex:0] doubleValue]] forKey:@"long"];
-                            
-                            [val setObject:[NSNumber numberWithDouble:[[attributes objectForKey:@"afstand_afstand"] doubleValue]] forKey:@"distance"];
-                            [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:streetName andAddress:streetName andTerms:self.srchString]] forKey:@"relevance"];
-                            
-                            [addressArray addObject:val];
-                        }
-                        
-                    }
+                for(NSDictionary* feature in json[@"features"]){
+                    KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+                    
+                    NSInteger relevance = [SMRouteUtils pointsForName:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
+                                                                        item.zip,
+                                                                        item.city] stringByTrimmingCharactersInSet:set]
+                                                           andAddress:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
+                                                                        item.zip,
+                                                                        item.city] stringByTrimmingCharactersInSet:set]
+                                                             andTerms:self.srchString];
+                    item.relevance = relevance;
+                    
+                    [addressArray addObject:item];
                 }
                 
-                [addressArray sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2){
-                    long first= ((NSNumber*)[obj1 objectForKey:@"distance"]).longValue;
-                    long second= ((NSNumber*)[obj2 objectForKey:@"distance"]).longValue;
+                [addressArray sortUsingComparator:^NSComparisonResult(KortforItem* obj1, KortforItem* obj2){
+                    long first = obj1.distance;
+                    long second = obj2.distance;
                     
                     if(first<second)
                         return NSOrderedAscending;
@@ -293,8 +214,16 @@ typedef enum {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     @synchronized(self.resultsArr) {
                         [self.resultsArr addObjectsFromArray:addressArray];
-                        [self.resultsArr sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2) {
-                            return [[obj1 objectForKey:@"order"] compare:[obj2 objectForKey:@"order"]];
+                        [self.resultsArr sortUsingComparator:^NSComparisonResult(FoursquareItem* obj1, FoursquareItem* obj2) {
+                            double d1 = obj1.order;
+                            double d2 = obj2.order;
+                            if (d1 > d2) {
+                                return NSOrderedDescending;
+                            } else if (d1 < d2) {
+                                return NSOrderedAscending;
+                            } else {
+                                return NSOrderedSame;
+                            }
                         }];
                     }
                     if (self.delegate) {
@@ -317,52 +246,36 @@ typedef enum {
 }
 
 - (void)getKortforsyningenAutocomplete{
-    NSString* nameKey= @"navn";
-    NSString* nameKey2= @"vej_navn";
-    NSString* zipKey= @"postdistrikt_kode";
-    NSString* houseKey= @"husnr";
-    NSString* distanceKey= @"afstand_afstand";
-    NSString* municipalityKey= @"postdistrikt_navn";
-//    NSString* geometryX= @"xmin";
-//    NSString* geometryY= @"ymin";
-
     completeType= autocompleteKortforsyningen;
 
-    if ([SMLocationManager instance].hasValidLocation) {        
-//        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"( )+" options:NSRegularExpressionCaseInsensitive error:NULL];
-//        NSString *srchstring = [regex stringByReplacingMatchesInString:self.srchString options:0 range:NSMakeRange(0, [self.srchString length]) withTemplate:@","];
-        
+    if ([SMLocationManager instance].hasValidLocation) {
         NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=vej&vejnavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@", KORT_SERVICE,
                                self.srchString, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
 
-        BOOL newParser = NO;
-        
-        NSDictionary * d = [SMAddressParser parseAddress:self.srchString];
-        NSLog(@"Address: %@", d);
+        UnknownSearchListItem *item = [SMAddressParser parseAddress:self.srchString];
+        NSLog(@"Address: %@", item);
         BOOL additionalData = NO;
-        if ([d objectForKey:@"number"] || [d objectForKey:@"city"] || [d objectForKey:@"zip"]) {
+        if (item.number.length || item.city.length || item.zip.length) {
             additionalData = YES;
             NSString * s = @"";
             NSMutableArray * arr = [NSMutableArray array];
-            if ([d objectForKey:@"street"]) {
-                [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", [d objectForKey:@"street"]]];
+            if (item.street.length) {
+                [arr addObject:[NSString stringWithFormat:@"vejnavn=*%@*", item.street]];
             }
-            if ([d objectForKey:@"number"]) {
-                [arr addObject:[NSString stringWithFormat:@"husnr=%@", [d objectForKey:@"number"]]];
+            if (item.number.length) {
+                [arr addObject:[NSString stringWithFormat:@"husnr=%@", item.number]];
             }
-            if ([d objectForKey:@"city"]) {
-                [arr addObject:[NSString stringWithFormat:@"postdist=%@", [d objectForKey:@"city"]]];
+            if (item.city.length) {
+                [arr addObject:[NSString stringWithFormat:@"postdist=%@", item.city]];
             }
-            if ([d objectForKey:@"zip"]) {
-                [arr addObject:[NSString stringWithFormat:@"postnr=%@", [d objectForKey:@"zip"]]];
+            if (item.zip.length) {
+                [arr addObject:[NSString stringWithFormat:@"postnr=%@", item.zip]];
             }
             
             s = [arr componentsJoinedByString:@"&"];
             
             URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=adresse&%@&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@", KORT_SERVICE,
                                    s, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-            
-            newParser = YES;
         }
         
         debugLog(@"Kort: %@", URLString);
@@ -373,129 +286,39 @@ typedef enum {
                 
             if ([data length] > 0 && error == nil){
 
-                
-                NSDictionary* json= [NSJSONSerialization JSONObjectWithData:data options:nil error:&error];
+                NSDictionary* json= [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
 
                 NSLog(@"Received data %@", json);
                 if(!json){
                     NSLog(@"Response: %@",[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
                 }
                 
+                NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
+                [set addCharactersInString:@","];
+                
                 NSMutableArray* addressArray= [NSMutableArray new];
-                for (NSString* key in json.allKeys) {
-                    if ([key isEqualToString:@"features"]) {
-                        NSArray* features= [json objectForKey:key]; // array of features (dictionaries)
-                        for(NSDictionary* feature in features){
-                            NSMutableDictionary * val = [NSMutableDictionary dictionaryWithDictionary: @{@"source" : @"autocomplete",
-                                                         @"subsource" : @"oiorest",
-                                                         @"order" : @2
-                                                         }];
-
-                            
-                            NSDictionary* attributes=[feature objectForKey:@"properties"];
-                            NSArray* geometryInfo= [attributes objectForKey:@"bbox"];
-//                            NSArray0* municipalityInfo= [attributes objectForKey:municipalityKey];
-
-                            if (newParser) {
-                                NSString* streetName= [attributes objectForKey:nameKey2];
-                                if(!streetName) {
-                                    continue;
-                                }
-                                NSString* municipalityName= [attributes objectForKey:municipalityKey];
-                                if (!municipalityName) {
-                                    municipalityName= @"";
-                                }
-                                
-                                NSString* municipalityCode= [attributes objectForKey:zipKey];
-                                if (!municipalityCode) {
-                                    municipalityCode= @"";
-                                }
-
-                                NSString* houseNumber = [NSString stringWithFormat:@"%@", [attributes objectForKey:houseKey]];
-                                
-                                
-                                [val setObject:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                streetName,
-                                                houseNumber,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"name"];
-                                [val setObject:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                streetName,
-                                                houseNumber,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"address"];
-                                [val setObject:streetName forKey:@"street"];
-                                [val setObject:municipalityCode forKey:@"zip"];
-                                
-                                double distance = [[attributes objectForKey:distanceKey] doubleValue];
-                                
-                                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                                                                        streetName,
-                                                                                                        houseNumber,
-                                                                                                        municipalityCode,
-                                                                                                        municipalityName] andAddress:[NSString stringWithFormat:@"%@ %@, %@ %@, Danmark",
-                                                                                                                                      streetName,
-                                                                                                                                      houseNumber,
-                                                                                                                                      municipalityCode,
-                                                                                                                                      municipalityName] andTerms:self.srchString]] forKey:@"relevance"];
-                                
-                            } else {
-                                NSString* streetName= [attributes objectForKey:nameKey];
-                                if(!streetName) {
-                                    continue;
-                                }
-                                NSString* municipalityName= [attributes objectForKey:municipalityKey];
-                                if (!municipalityName) {
-                                    municipalityName= @"";
-                                }
-                                
-                                NSString* municipalityCode= [attributes objectForKey:zipKey];
-                                if (!municipalityCode) {
-                                    municipalityCode= @"";
-                                }
-                                
-                                
-                                [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"name"];
-                                [val setObject:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                municipalityCode,
-                                                municipalityName]
-                                        forKey:@"address"];
-                                [val setObject:streetName forKey:@"street"];
-                                [val setObject:municipalityCode forKey:@"zip"];
-                                
-                                double distance = 0;
-                                if ([[SMLocationManager instance] hasValidLocation]) {
-                                    CLLocation * c = [[CLLocation alloc] initWithLatitude:[[geometryInfo objectAtIndex:1] doubleValue] longitude:[[geometryInfo objectAtIndex:0] doubleValue]];
-                                    distance = [[SMLocationManager instance].lastValidLocation distanceFromLocation:c];
-                                    
-                                }
-                                [val setObject:[NSNumber numberWithDouble:distance] forKey:@"distance"];
-                                [val setObject:[NSNumber numberWithInteger:[SMRouteUtils pointsForName:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                                                                        municipalityCode,
-                                                                                                        municipalityName] andAddress:[NSString stringWithFormat:@"%@ , %@ %@, Danmark", streetName,
-                                                                                                                                      municipalityCode,
-                                                                                                                                      municipalityName] andTerms:self.srchString]] forKey:@"relevance"];
-                            }
-
-                            
-                            
-                            
-                            
-                            [addressArray addObject:val];
-                        }
-                        
-                    }
+                for(NSDictionary* feature in json[@"features"]){
+                    KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+                    
+                    NSInteger relevance = [SMRouteUtils pointsForName:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
+                                                                        item.zip,
+                                                                        item.city] stringByTrimmingCharactersInSet:set]
+                                                           andAddress:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
+                                                                        item.zip,
+                                                                        item.city] stringByTrimmingCharactersInSet:set]
+                                                             andTerms:self.srchString];
+                    item.relevance = relevance;
+                    
+                    NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
+                    item.name = formattedAddress;
+                    item.address = formattedAddress;
+                    
+                    [addressArray addObject:item];
                 }
                 
-                [addressArray sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2){
-                    long first= ((NSNumber*)[obj1 objectForKey:@"distance"]).longValue;
-                    long second= ((NSNumber*)[obj2 objectForKey:@"distance"]).longValue;
+                [addressArray sortUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2){
+                    long first = obj1.distance;
+                    long second = obj2.distance;
                     
                     if(first<second)
                         return NSOrderedAscending;
@@ -508,8 +331,16 @@ typedef enum {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     @synchronized(self.resultsArr) {
                         [self.resultsArr addObjectsFromArray:addressArray];
-                        [self.resultsArr sortUsingComparator:^NSComparisonResult(NSDictionary* obj1, NSDictionary* obj2) {
-                            return [[obj1 objectForKey:@"order"] compare:[obj2 objectForKey:@"order"]];
+                        [self.resultsArr sortUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2) {
+                            double d1 = obj1.order;
+                            double d2 = obj2.order;
+                            if (d1 > d2) {
+                                return NSOrderedDescending;
+                            } else if (d1 < d2) {
+                                return NSOrderedAscending;
+                            } else {
+                                return NSOrderedSame;
+                            }
                         }];
                     }
                     if (self.delegate) {

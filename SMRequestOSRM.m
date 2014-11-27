@@ -200,16 +200,16 @@ static dispatch_queue_t reachabilityQueue;
         id r = [NSJSONSerialization JSONObjectWithData:self.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithData:self.responseData];
         if ([self.currentRequest isEqualToString:@"findNearestPointForStart:andEnd:"]) {
             if (self.locStep > 1) {
-                if ([r objectForKey:@"mapped_coordinate"] && [[r objectForKey:@"mapped_coordinate"] isKindOfClass:[NSArray class]] && ([[r objectForKey:@"mapped_coordinate"] count] > 1)) {
-                    self.endLoc = [[CLLocation alloc] initWithLatitude:[[[r objectForKey:@"mapped_coordinate"] objectAtIndex:0] doubleValue] longitude:[[[r objectForKey:@"mapped_coordinate"] objectAtIndex:1] doubleValue]];
+                if (r[@"mapped_coordinate"] && [r[@"mapped_coordinate"] isKindOfClass:[NSArray class]] && ([r[@"mapped_coordinate"] count] > 1)) {
+                    self.endLoc = [[CLLocation alloc] initWithLatitude:[r[@"mapped_coordinate"][0] doubleValue] longitude:[r[@"mapped_coordinate"][1] doubleValue]];
                 }
                 if ([self.delegate conformsToProtocol:@protocol(SMRequestOSRMDelegate)]) {
                     [self.delegate request:self finishedWithResult:@{@"start" : self.startLoc, @"end" : self.endLoc}];
                 }
                 self.locStep = 0;
             } else {
-                if ([r objectForKey:@"mapped_coordinate"] && [[r objectForKey:@"mapped_coordinate"] isKindOfClass:[NSArray class]] && ([[r objectForKey:@"mapped_coordinate"] count] > 1)) {
-                    self.startLoc = [[CLLocation alloc] initWithLatitude:[[[r objectForKey:@"mapped_coordinate"] objectAtIndex:0] doubleValue] longitude:[[[r objectForKey:@"mapped_coordinate"] objectAtIndex:1] doubleValue]];
+                if (r[@"mapped_coordinate"] && [r[@"mapped_coordinate"] isKindOfClass:[NSArray class]] && ([r[@"mapped_coordinate"] count] > 1)) {
+                    self.startLoc = [[CLLocation alloc] initWithLatitude:[r[@"mapped_coordinate"][0] doubleValue] longitude:[r[@"mapped_coordinate"][1] doubleValue]];
                 }
                 [self findNearestPointForStart:self.startLoc andEnd:self.endLoc];
             }
@@ -219,7 +219,7 @@ static dispatch_queue_t reachabilityQueue;
             }
         } else {
             
-            if (!r || ([r isKindOfClass:[NSDictionary class]] == NO) || ([[r objectForKey:@"status"] intValue] != 0)) {
+            if (!r || ([r isKindOfClass:[NSDictionary class]] == NO) || ([r[@"status"] intValue] != 0)) {
                 if (self.currentZ == DEFAULT_Z) {
                     if (self.originalJSON) {
                         if ([self.delegate conformsToProtocol:@protocol(SMRequestOSRMDelegate)]) {
@@ -240,14 +240,14 @@ static dispatch_queue_t reachabilityQueue;
                     }
                 } else {
                     self.originalJSON = r;
-                    self.originalChecksum = [NSString stringWithFormat:@"%@", [[r objectForKey:@"hint_data"] objectForKey:@"checksum"]];
-                    self.originalStartHint = [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"%@", [[[r objectForKey:@"hint_data"] objectForKey:@"locations"] objectAtIndex:0]]];
-                    self.originalDestinationHint = [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"%@", [[[r objectForKey:@"hint_data"] objectForKey:@"locations"] lastObject]]];
-                    if ([r objectForKey:@"route_geometry"]) {
-                        NSMutableArray * points = [SMGPSUtil decodePolyline:[r objectForKey:@"route_geometry"]];
+                    self.originalChecksum = [NSString stringWithFormat:@"%@", r[@"hint_data"][@"checksum"]];
+                    self.originalStartHint = [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"%@", r[@"hint_data"][@"locations"][0]]];
+                    self.originalDestinationHint = [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"%@", [r[@"hint_data"][@"locations"] lastObject]]];
+                    if (r[@"route_geometry"]) {
+                        NSMutableArray * points = [SMGPSUtil decodePolyline:r[@"route_geometry"]];
                         CLLocationCoordinate2D start = ((CLLocation*)[points objectAtIndex:0]).coordinate;
                         CLLocationCoordinate2D end = ((CLLocation*)[points lastObject]).coordinate;
-                        [self getRouteFrom:start to:end via:self.originalViaPoints checksum:[NSString stringWithFormat:@"%@", [[r objectForKey:@"hint_data"] objectForKey:@"checksum"]] andStartHint:self.originalStartHint destinationHint:self.originalDestinationHint andZ:DEFAULT_Z];
+                        [self getRouteFrom:start to:end via:self.originalViaPoints checksum:[NSString stringWithFormat:@"%@", r[@"hint_data"][@"checksum"]] andStartHint:self.originalStartHint destinationHint:self.originalDestinationHint andZ:DEFAULT_Z];
                     } else {
                         [self getRouteFrom:self.originalStart to:self.originalEnd via:self.originalViaPoints checksum:self.originalChecksum andStartHint:self.originalStartHint destinationHint:self.originalDestinationHint andZ:DEFAULT_Z];
                     }

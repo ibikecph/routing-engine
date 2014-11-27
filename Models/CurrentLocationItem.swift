@@ -16,6 +16,7 @@ import CoreLocation
     var name: String = ""
     var address: String = "" // TODO: Check if it should can be calculated somehow https://github.com/ibikecph/ibikecph-lib-android/blob/master/IBikeCPHLib/src/com/spoiledmilk/ibikecph/search/CurrentLocation.java#L43
     var street: String = ""
+    var number: String = ""
     var order: Int = -1
     var zip: String = ""
     var city: String = ""
