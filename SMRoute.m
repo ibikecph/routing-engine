@@ -15,7 +15,6 @@
 #import "SMGPSUtil.h"
 //#import "SMUtil.h"
 #import "SMRouteUtils.h"
-#import "SMRouteLocation.h"
 
 #define MAX_DISTANCE_FROM_PATH 30 // in meters
 
@@ -358,13 +357,13 @@
 
 - (CLLocation *) getFirstVisitedLocation {
     if (self.visitedLocations && self.visitedLocations.count > 0)
-        return ((SMRouteLocation *)self.visitedLocations.firstObject).location;
+        return ((CLLocation *)self.visitedLocations.firstObject);
     return NULL;
 }
 
 - (CLLocation *) getLastVisitedLocation {
     if (self.visitedLocations && self.visitedLocations.count > 0)
-        return ((SMRouteLocation *)self.visitedLocations.lastObject).location;
+        return ((CLLocation *)self.visitedLocations.lastObject);
     return NULL;
 }
 
@@ -404,15 +403,15 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     return locations;
 }
 
-+ (NSString *)encodePolyline:(NSArray *)coordinates
++ (NSString *)encodePolyline:(NSArray *)locations
 {
     NSMutableString *encodedString = [NSMutableString string];
     int val = 0;
     int value = 0;
     CLLocationCoordinate2D prevCoordinate = CLLocationCoordinate2DMake(0, 0);
     
-    for (SMRouteLocation *coordinateValue in coordinates) {
-        CLLocationCoordinate2D coordinate = coordinateValue.location.coordinate;
+    for (CLLocation *location in locations) {
+        CLLocationCoordinate2D coordinate = location.coordinate;
         
         // Encode latitude
         val = round((coordinate.latitude - prevCoordinate.latitude) * [SMRouteSettings sharedInstance].route_polyline_precision);
@@ -581,7 +580,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.tripDistance = 0.0;
     }
     if (self.visitedLocations.count > 0) {
-        self.tripDistance += [loc distanceFromLocation:((SMRouteLocation *)self.visitedLocations.lastObject).location];
+        self.tripDistance += [loc distanceFromLocation:((CLLocation *)self.visitedLocations.lastObject)];
     }
 
     if (self.distanceLeft < 0.0) {
@@ -648,9 +647,9 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     CGFloat distance = 0.0f;
     
     if ([self.visitedLocations count] > 1) {
-        CLLocation * startLoc = ((SMRouteLocation *)self.visitedLocations.firstObject).location;
+        CLLocation * startLoc = ((CLLocation *)self.visitedLocations.firstObject);
         for (int i = 1; i < [self.visitedLocations count]; i++) {
-            CLLocation *loc = ((SMRouteLocation *)self.visitedLocations[i]).location;
+            CLLocation *loc = ((CLLocation *)self.visitedLocations[i]);
             distance += [loc distanceFromLocation:startLoc];
             startLoc = loc;
         }
@@ -665,8 +664,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     CGFloat distance = [self calculateDistanceTraveled];
     CGFloat avgSpeed = 0.0f;
     if ([self.visitedLocations count] > 1) {
-        NSDate * startLoc = ((SMRouteLocation *)self.visitedLocations.firstObject).date;
-        NSDate * endLoc = ((SMRouteLocation *)self.visitedLocations.lastObject).date;
+        NSDate * startLoc = ((CLLocation *)self.visitedLocations.firstObject).timestamp;
+        NSDate * endLoc = ((CLLocation *)self.visitedLocations.lastObject).timestamp;
         if ([endLoc timeIntervalSinceDate:startLoc] > 0) {
             avgSpeed = distance / ([endLoc timeIntervalSinceDate:startLoc]);            
         }
@@ -678,8 +677,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 - (NSString*)timePassed {
     if ([self.visitedLocations count] > 1) {
-        NSDate * startDate = ((SMRouteLocation *)self.visitedLocations.firstObject).date;
-        NSDate * endDate = ((SMRouteLocation *)self.visitedLocations.lastObject).date;
+        NSDate * startDate = ((CLLocation *)self.visitedLocations.firstObject).timestamp;
+        NSDate * endDate = ((CLLocation *)self.visitedLocations.lastObject).timestamp;
         return formatTimePassed(startDate, endDate);
     }
     return @"";
@@ -693,8 +692,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     CGFloat avgSpeed = [self calculateAverageSpeed];
     CGFloat timeSpent = 0.0f;
     if ([self.visitedLocations count] > 1) {
-        NSDate * startLoc = ((SMRouteLocation *)self.visitedLocations.firstObject).date;
-        NSDate * endLoc = ((SMRouteLocation *)self.visitedLocations.lastObject).date;
+        NSDate * startLoc = ((CLLocation *)self.visitedLocations.firstObject).timestamp;
+        NSDate * endLoc = ((CLLocation *)self.visitedLocations.lastObject).timestamp;
         timeSpent = [endLoc timeIntervalSinceDate:startLoc] / 3600.0f;
     }
 
@@ -964,7 +963,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         [self updateDistances:loc];
         if (!self.visitedLocations)
             self.visitedLocations = [NSMutableArray array];
-        [self.visitedLocations addObject:[[SMRouteLocation alloc] initWithLocation:loc date:[NSDate date]]];
+        [self.visitedLocations addObject:loc];
         self.distanceFromRoute = MAXFLOAT;
         isTooFar = [self findNearestRouteSegmentForLocation:loc withMaxDistance:maxD];
         [self updateSegmentBasedOnWaypoint];
