@@ -11,6 +11,7 @@
 //
 
 #import "SMRequestOSRM.h"
+#import "SMRouteConsts.h"
 #import "NSString+URLEncode.h"
 #import "SMGPSUtil.h"
 #import "Reachability.h"

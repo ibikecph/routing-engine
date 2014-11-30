@@ -10,7 +10,7 @@
 //  http://mozilla.org/MPL/2.0/.
 //
 
-#import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 
 #define DEFAULT_ROUTESETTINGS_FILENAME @"smroute_settings"

@@ -11,6 +11,7 @@
 //
 
 #import "SMRouteUtils.h"
+#import "SMRouteConsts.h"
 #import "NSString+Relevance.h"
 
 @implementation SMRouteUtils

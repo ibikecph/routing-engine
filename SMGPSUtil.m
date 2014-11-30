@@ -12,6 +12,7 @@
 
 #import "SMGPSUtil.h"
 #import <math.h>
+#import "SMRouteConsts.h"
 
 static const double DEG_TO_RAD = 0.017453292519943295769236907684886;
 static const double EARTH_RADIUS_IN_METERS = 6372797.560856;

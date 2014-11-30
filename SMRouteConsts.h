@@ -17,6 +17,8 @@
 #import "SMTranslation.h"
 #import "SMRouteSettings.h"
 
+#import <Foundation/Foundation.h>
+
 #if DISTRIBUTION_VERSION
 #define debugLog(args...)    // NO logs
 #else
@@ -43,7 +45,8 @@
 #define DISTANCE_KM_SHORT @"km"
 #define DISTANCE_M_SHORT @"m"
 
-
+#define BUNDLE_VERSION [[NSBundle mainBundle] objectForInfoDictionaryKey:(NSString*) kCFBundleVersionKey]
+#define USER_AGENT [NSString stringWithFormat:@"IBikeCPH/%@/iOS", BUNDLE_VERSION]
 
 #define OSRM_ADDRESS [SMRouteSettings sharedInstance].osrm_address
 #define OSRM_SERVER [SMRouteSettings sharedInstance].osrm_server
