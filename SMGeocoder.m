@@ -278,25 +278,20 @@
             
                 NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
                 [set addCharactersInString:@","];
-                NSMutableArray *places = [NSMutableArray array];
-                
-                for(NSDictionary* feature in json[@"features"]){
+               
+                // Kortfor
+                NSMutableArray *kortforItems = [NSMutableArray new];
+                for (NSDictionary *feature in json[@"features"]){
                     KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
                     
                     NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
                     item.name = formattedAddress;
                     item.address = formattedAddress;
-                    
-                    NSDictionary * dict = @{
-                                            (NSString *)kABPersonAddressStreetKey : item.name
-                                            };
-                    MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
-                    [places addObject:pl];
                 }
-                
-                NSArray *sortedPlaces = [places sortedArrayUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2){
-                    long first= obj1.distance;
-                    long second= obj2.distance;
+                // Sort
+                NSArray *sortedKortforItems = [kortforItems sortedArrayUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2){
+                    long first = obj1.distance;
+                    long second = obj2.distance;
                     
                     if(first<second)
                         return NSOrderedAscending;
@@ -305,26 +300,25 @@
                     else
                         return NSOrderedSame;
                 }];
-              
-                
-                NSMutableArray * arr = [NSMutableArray array];
-
-                NSString* title = @"";
-                NSString* subtitle = @"";
-                if ([sortedPlaces count] > 0) {
-                    KortforItem *item = sortedPlaces.firstObject;
+                // Placemarks
+                NSMutableArray *placemarks = [NSMutableArray new];
+                for (KortforItem *item in sortedKortforItems){
+                    NSDictionary * dict = @{
+                                            (NSString *)kABPersonAddressStreetKey : item.name
+                                            };
+                    MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
+                    [placemarks addObject:pl];
+                }
+                // Title + subtitle
+                NSString *title = @"";
+                NSString *subtitle = @"";
+                if ([placemarks count] > 0) {
+                    KortforItem *item = placemarks.firstObject;
                     title = [NSString stringWithFormat:@"%@ %@", item.street, item.number];
                     subtitle = [NSString stringWithFormat:@"%@ %@", item.zip, item.city];
                 }
-                for (KortforItem *item in sortedPlaces) {
-                    [arr addObject:@{
-                                     @"street" : item.street,
-                                     @"house_number" : item.number,
-                                     @"zip" : item.zip,
-                                     @"city" : item.city
-                                     }];
-                }
-                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": places}, nil);
+                // Callback
+                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": placemarks}, nil);
             } else {
                 handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
             }
@@ -333,11 +327,6 @@
 }
 
 + (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
-//    if (USE_APPLE_GEOCODER) {
-//        [SMGeocoder appleReverseGeocode:coord completionHandler:handler];
-//    } else {
-//        [SMGeocoder oiorestReverseGeocode:coord completionHandler:handler];
-//    }
     [SMGeocoder kortReverseGeocode:coord completionHandler:handler];
 }
 
