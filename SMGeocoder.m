@@ -284,9 +284,11 @@
                 for (NSDictionary *feature in json[@"features"]){
                     KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
                     
+                    // TODO: Move address formatting to modelclasses
                     NSString *formattedAddress = [[NSString stringWithFormat:@"%@ %@, %@ %@", item.street, item.number, item.zip, item.city] stringByTrimmingCharactersInSet:set];
                     item.name = formattedAddress;
                     item.address = formattedAddress;
+                    [kortforItems addObject:item];
                 }
                 // Sort
                 NSArray *sortedKortforItems = [kortforItems sortedArrayUsingComparator:^NSComparisonResult(KortforItem *obj1, KortforItem *obj2){
@@ -300,25 +302,16 @@
                     else
                         return NSOrderedSame;
                 }];
-                // Placemarks
-                NSMutableArray *placemarks = [NSMutableArray new];
-                for (KortforItem *item in sortedKortforItems){
-                    NSDictionary * dict = @{
-                                            (NSString *)kABPersonAddressStreetKey : item.name
-                                            };
-                    MKPlacemark * pl = [[MKPlacemark alloc] initWithCoordinate:item.location.coordinate addressDictionary:dict];
-                    [placemarks addObject:pl];
-                }
                 // Title + subtitle
                 NSString *title = @"";
                 NSString *subtitle = @"";
-                if ([placemarks count] > 0) {
-                    KortforItem *item = placemarks.firstObject;
+                if ([sortedKortforItems count] > 0) {
+                    KortforItem *item = sortedKortforItems.firstObject;
                     title = [NSString stringWithFormat:@"%@ %@", item.street, item.number];
                     subtitle = [NSString stringWithFormat:@"%@ %@", item.zip, item.city];
                 }
                 // Callback
-                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": placemarks}, nil);
+                handler(@{@"title" : title, @"subtitle" : subtitle, @"near": sortedKortforItems}, nil);
             } else {
                 handler(@{}, [NSError errorWithDomain:NSOSStatusErrorDomain code:1 userInfo:@{NSLocalizedDescriptionKey : @"Wrong data returned from the OIOREST"}]);
             }
