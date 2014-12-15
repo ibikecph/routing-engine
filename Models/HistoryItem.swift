@@ -72,4 +72,8 @@ import CoreLocation
             "long" : self.location.coordinate.longitude
         ]
     }
+    
+    override var description: String {
+        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location.coordinate.latitude), \(location.coordinate.longitude)), Order: \(order), Relevance: \(relevance), Date: \(startDate) -> \(endDate)"
+    }
 }
