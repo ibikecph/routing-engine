@@ -13,6 +13,7 @@
 #import <Foundation/Foundation.h>
 
 @class SMAPIOperation;
+@protocol SearchListItem;
 
 @protocol SMAPIOperationDelegate <NSObject>
 - (void)queuedRequest:(SMAPIOperation*) object failedWithError:(NSError*)error;
