@@ -77,7 +77,15 @@ import CoreLocation
         let longitude = json["longitude"].doubleValue
         location = CLLocation(latitude: CLLocationDegrees(latitude), longitude: CLLocationDegrees(longitude))
         
-        self.origin = .Unknown;
+        self.origin = {
+            switch json["source"].stringValue {
+                case "home": return .Home
+                case "work": return .Work
+                case "school": return .School
+                case "favourites": fallthrough
+                default: return .Unknown
+            }
+        }()
         
         self.identifier = json["id"].stringValue
     }
@@ -92,8 +100,12 @@ import CoreLocation
         
         name = json["name"].stringValue
         address = json["address"].stringValue
-        startDate = NSKeyedUnarchiver.unarchiveObjectWithData(plistDictionary["startDate"] as NSData) as? NSDate
-        endDate = NSKeyedUnarchiver.unarchiveObjectWithData(plistDictionary["endDate"] as NSData) as? NSDate
+        if let data = plistDictionary["startDate"] as? NSData {
+            startDate = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSDate
+        }
+        if let data = plistDictionary["endDate"] as? NSData {
+            endDate = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSDate
+        }
         
         // Location
         let latitude = json["lat"].doubleValue
@@ -108,14 +120,14 @@ import CoreLocation
     
     func plistRepresentation() -> [String : AnyObject] {
         return [
-            "identifier" : self.identifier,
-            "name" :  self.name,
-            "address" : self.address,
-            "startDate" : NSKeyedArchiver.archivedDataWithRootObject(self.startDate!),
-            "endDate" : NSKeyedArchiver.archivedDataWithRootObject(self.endDate!),
-            "origin" : self.origin.rawValue,
-            "lat" : self.location.coordinate.latitude,
-            "long" : self.location.coordinate.longitude
+            "identifier" : identifier,
+            "name" :  name,
+            "address" : address,
+            "startDate" : NSKeyedArchiver.archivedDataWithRootObject(startDate ?? NSDate()),
+            "endDate" : NSKeyedArchiver.archivedDataWithRootObject(endDate ?? NSDate()),
+            "origin" : origin.rawValue,
+            "lat" : location.coordinate.latitude,
+            "long" : location.coordinate.longitude
         ]
     }
     
