@@ -58,7 +58,7 @@ typedef enum {
 @property int lengthInMeters;
 @property int timeInSeconds;
 @property (nonatomic, strong) NSString *lengthWithUnit;
-@property(nonatomic, strong) NSString* smallImageName;
+@property(nonatomic, strong) NSString* imageName;
 /**
  * Length to next turn in units (km or m)
  * This value will not auto update
@@ -93,7 +93,6 @@ typedef enum {
 //- (NSString *)fullDescriptionString; // including wayname
 
 - (UIImage *)directionIcon;
-- (UIImage *)largeDirectionIcon;
 
 - (void)generateDescriptionString;
 - (void)generateStartDescriptionString;

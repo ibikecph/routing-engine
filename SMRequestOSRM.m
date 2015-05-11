@@ -254,8 +254,6 @@ static dispatch_queue_t reachabilityQueue;
                     }
                 }
             }
-            
-            
         }
     }
 }

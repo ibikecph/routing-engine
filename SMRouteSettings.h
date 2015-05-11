@@ -14,7 +14,8 @@
 
 
 #define DEFAULT_ROUTESETTINGS_FILENAME @"smroute_settings"
-#define DEFAULT_PRIVATE_SUFIX @"_private"
+#define DEFAULT_PRIVATE_SUFFIX @"_private"
+#define DEFAULT_PRIVATE_APP_SUFFIX @"_app_private"
 
 /**
  * \ingroup libs

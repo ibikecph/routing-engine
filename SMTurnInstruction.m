@@ -14,7 +14,7 @@
 
 @implementation SMTurnInstruction
 @synthesize drivingDirection= _drivingDirection;
-NSString *iconsSmall[] = {
+NSString *iconsBlack[] = {
     @"no icon",
     @"up",
     @"right-ward",
@@ -36,7 +36,7 @@ NSString *iconsSmall[] = {
     @"near-destination",
 };
 
-NSString *iconsLarge[] = {
+NSString *iconsWhite[] = {
     @"no icon",
     @"white-up",
     @"white-right-ward",
@@ -119,11 +119,7 @@ NSString *directionString(NSString *abbreviation) {
 }
 
 - (UIImage *)directionIcon {
-    return [UIImage imageNamed:self.smallImageName];
-}
-
-- (UIImage *)largeDirectionIcon {
-    return [UIImage imageNamed:iconsLarge[self.drivingDirection]];
+    return [UIImage imageNamed:self.imageName];
 }
 
 // Full textual representation of the object, used mainly for debugging
@@ -140,8 +136,8 @@ NSString *directionString(NSString *abbreviation) {
 }
 
 -(void)setDrivingDirection:(TurnDirection)drivingDirection{
-    _drivingDirection= drivingDirection;
-    self.smallImageName= iconsSmall[self.drivingDirection];
+    _drivingDirection = drivingDirection;
+    self.imageName = iconsBlack[self.drivingDirection];
 }
 
 @end

@@ -29,12 +29,7 @@
 @property (readonly, nonatomic) CLLocation *lastValidLocation;
 @property BOOL locationServicesEnabled;
 
-
 + (SMLocationManager *)instance;
-- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation;
-
-- (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error;
-
 - (void)start;
 - (void)idle;
 - (void)stop;

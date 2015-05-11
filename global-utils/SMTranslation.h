@@ -18,11 +18,11 @@
  */
 @interface SMTranslation : NSObject
 
-+ (SMTranslation *)instance;
-+(NSString*)decodeString:(NSString*) txt;
++ (NSString *)decodeString:(NSString *)txt;
+
 /**
  * recursively translates given view
  */
-+ (void) translateView:(id) view;
++ (void)translateView:(id)view;
 
 @end

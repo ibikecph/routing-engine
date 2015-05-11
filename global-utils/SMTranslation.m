@@ -21,64 +21,21 @@
 @end
 
 @interface SMTranslation()
-@property (nonatomic, strong) NSMutableDictionary * dictionary;
 @end
 
 @implementation SMTranslation
 
-+ (SMTranslation *)instance {
-	static SMTranslation *instance;
-	if (instance == nil) {
-		instance = [[SMTranslation alloc] init];
-        
-        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-//        if (![defaults stringForKey:@"appLanguage"]) {
-//            /**
-//             * init default settings
-//             */
-//            NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
-//            NSArray* languages = [defaults objectForKey:@"AppleLanguages"];
-//            NSDictionary *appDefaults;
-//            if ([[languages objectAtIndex:0] isEqualToString:@"da"] || [[languages objectAtIndex:0] isEqualToString:@"dan"]) {
-//                appDefaults = [NSDictionary dictionaryWithObject:@"dk" forKey:@"appLanguage"];
-//            } else {
-//                appDefaults = [NSDictionary dictionaryWithObject:@"en" forKey:@"appLanguage"];
-//            }
-//            [defaults registerDefaults:appDefaults];
-//            [defaults synchronize];
-//        }
-        NSString * language = [defaults stringForKey:@"appLanguage"];
-        
-        [instance loadStringsForLanguage:language];
-	}
-	return instance;
-}
-
 #pragma mark - localization / string decoding
 
--(NSString *) stringByStrippingHTML:(NSString*) str {
-    NSRange r;
-    NSString *s = [str copy];
-    while ((r = [s rangeOfString:@"<[^>]+>" options:NSRegularExpressionSearch]).location != NSNotFound)
-        s = [s stringByReplacingCharactersInRange:r withString:@""];
-    return s;
-}
-
-//<Rasko>
--(void) loadStringsForLanguage:(NSString*)language{
-    NSMutableDictionary * d = [[NSMutableDictionary alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:[@"dictionary_" stringByAppendingString:language] ofType:@"strings"]];
-    [self setDictionary:d];
-}
-
--(NSString*)decodeString:(NSString*) txt{
-    if(!self.dictionary) return txt;
-    NSString * ret = [self.dictionary objectForKey:txt];
-    if(!ret) return txt;
-    return ret;
-}
-
 +(NSString*)decodeString:(NSString*) txt{
-    return [[SMTranslation instance] decodeString:txt];
+    NSString *localized = NSLocalizedString(txt, NULL);
+    if ([localized isEqualToString:txt]) {
+        localized = NSLocalizedStringFromTable(txt, @"Localizable_IBC", NULL);
+    }
+    if ([localized isEqualToString:txt]) {
+        localized = NSLocalizedStringFromTable(txt, @"Localizable_CP", NULL);
+    }
+    return localized;
 }
 
 + (void) translateView:(id) view {
@@ -105,14 +62,17 @@
         for (int i = 0; i < c.numberOfSegments; i++) {
             [c setTitle:[self decodeString:[c titleForSegmentAtIndex:i]] forSegmentAtIndex:i];
         }
+    } else if ([view isKindOfClass:[UIBarButtonItem class]]) {
+        UIBarButtonItem * c = (UIBarButtonItem *)view;
+        c.title = [self decodeString:c.title];
     }
     
     if([view respondsToSelector:@selector(viewTranslated)]){
         [view viewTranslated];
     }
     
-    if (((UIView*)view).subviews) {
-        for (id v in ((UIView*)view).subviews) {
+    if ([view respondsToSelector:@selector(subviews)]) {
+        for (UIView *v in ((UIView*)view).subviews) {
             [SMTranslation translateView:v];
         }
     }

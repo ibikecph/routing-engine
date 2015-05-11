@@ -18,7 +18,8 @@ static NSLock * _sharingLock;
 
 - (void)loadFromDefaultPlist{
     [self loadSettingsFromBundlePlist:DEFAULT_ROUTESETTINGS_FILENAME];
-    [self loadSettingsFromBundlePlist:[DEFAULT_ROUTESETTINGS_FILENAME stringByAppendingString:DEFAULT_PRIVATE_SUFIX]];
+    [self loadSettingsFromBundlePlist:[DEFAULT_ROUTESETTINGS_FILENAME stringByAppendingString:DEFAULT_PRIVATE_SUFFIX]];
+    [self loadSettingsFromBundlePlist:[DEFAULT_ROUTESETTINGS_FILENAME stringByAppendingString:DEFAULT_PRIVATE_APP_SUFFIX]];
 }
 
 - (BOOL)loadSettingsFromBundlePlist:(NSString*)fileName{
