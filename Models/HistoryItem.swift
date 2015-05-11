@@ -53,8 +53,12 @@ import CoreLocation
         
         name = json["name"].stringValue
         address = json["address"].stringValue
-        startDate = NSKeyedUnarchiver.unarchiveObjectWithData(plistDictionary["startDate"] as NSData) as? NSDate
-        endDate = NSKeyedUnarchiver.unarchiveObjectWithData(plistDictionary["endDate"] as NSData) as? NSDate
+        if let startDateData = plistDictionary["startDate"] as? NSData {
+            startDate = NSKeyedUnarchiver.unarchiveObjectWithData(startDateData) as? NSDate
+        }
+        if let endDateData = plistDictionary["endDate"] as? NSData {
+            endDate = NSKeyedUnarchiver.unarchiveObjectWithData(endDateData) as? NSDate
+        }
         
         // Location
         let latitude = json["lat"].doubleValue

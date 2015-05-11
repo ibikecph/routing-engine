@@ -35,4 +35,8 @@
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error;
 
+- (void)start;
+- (void)idle;
+- (void)stop;
+
 @end

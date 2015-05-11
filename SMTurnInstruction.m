@@ -118,7 +118,7 @@ NSString *directionString(NSString *abbreviation) {
     }
 }
 
-- (UIImage *)smallDirectionIcon {
+- (UIImage *)directionIcon {
     return [UIImage imageNamed:self.smallImageName];
 }
 

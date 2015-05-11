@@ -38,54 +38,34 @@
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation;
         locationManager.distanceFilter = kCLDistanceFilterNone;
 		
-		BOOL enabled;
-		/*if([locationManager respondsToSelector:@selector(locationServicesEnabled)]){
-         enabled = [locationManager locationServicesEnabled];
-         } else {
-         enabled = locationManager.locationServicesEnabled;
-         }*/
-        
-        if ([locationManager respondsToSelector:@selector(requestWhenInUseAuthorization)]) {
-            locationServicesEnabled = NO;
-            [locationManager requestWhenInUseAuthorization];
-        } else {
-            
-            enabled = [CLLocationManager locationServicesEnabled];
-            
-            if (enabled == YES) {
-                [locationManager startUpdatingLocation];
-                [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(stopLocationService:)  name:UIApplicationDidEnterBackgroundNotification object:nil];
-                [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(restartLocationService:) name:UIApplicationWillEnterForegroundNotification object:nil];
-            }
-            locationServicesEnabled = YES;
-        }
-        
+        locationServicesEnabled = NO;
+        [locationManager requestAlwaysAuthorization];
 	}
 	return self;
 }
 
 - (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
-    if (status == kCLAuthorizationStatusAuthorizedWhenInUse) {
+    if (status == kCLAuthorizationStatusAuthorizedAlways) {
         
         [locationManager startUpdatingLocation];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(stopLocationService:)  name:UIApplicationDidEnterBackgroundNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(restartLocationService:) name:UIApplicationWillEnterForegroundNotification object:nil];
+        [locationManager startMonitoringSignificantLocationChanges];
         
         locationServicesEnabled = YES;
-        
     }
 }
 
-- (void)locationManager:(CLLocationManager *)manager didUpdateToLocation:(CLLocation *)newLocation fromLocation:(CLLocation *)oldLocation
-{
+- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
+   
+    CLLocation *lastLocation = locations.lastObject;
+    
 	hasValidLocation = NO;
 	lastValidLocation = nil;
 	
-	if (!signbit(newLocation.horizontalAccuracy)) {
+	if (!signbit(lastLocation.horizontalAccuracy)) {
 		hasValidLocation = YES;
-		lastValidLocation = newLocation;
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"refreshPosition" object:nil];
+		lastValidLocation = lastLocation;
 	}
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"refreshPosition" object:self userInfo:@{@"locations" : locations}];
 }
 
 - (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error
@@ -103,6 +83,8 @@
 			case kCLErrorLocationUnknown:
                 NSLog(@"Location unknown!");
 				break;
+            default:
+                NSLog(@"Location error: %@", error.localizedDescription);
 		}
 	}
 }
@@ -110,22 +92,32 @@
 #pragma mark  - location service
 
 
-- (void)stopLocationService:(UIApplication *)application {
+- (void)start {
+    if (locationManager != nil) {
+        [locationManager requestAlwaysAuthorization];
+        [locationManager startUpdatingLocation];
+        [locationManager startMonitoringSignificantLocationChanges];
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest;
+    }
+}
+
+- (void)idle {
+    if (locationManager != nil) {
+        [locationManager requestAlwaysAuthorization];
+        [locationManager startUpdatingLocation];
+        [locationManager startMonitoringSignificantLocationChanges];
+        locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers;
+    }
+}
+
+- (void)stop {
     if (locationManager != nil) {
         [locationManager stopUpdatingLocation];
-        [locationManager stopUpdatingHeading];
+        [locationManager stopMonitoringSignificantLocationChanges];
     }
 }
 
 
-- (void)restartLocationService:(UIApplication *)application {
-    if (locationManager != nil) {
-        if ([locationManager respondsToSelector:@selector(requestWhenInUseAuthorization)]) {
-            [locationManager requestWhenInUseAuthorization];
-        }
-        [locationManager startUpdatingLocation];
-        [locationManager startUpdatingHeading];
-    }
-}
+
 
 @end

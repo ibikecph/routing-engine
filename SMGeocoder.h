@@ -13,6 +13,8 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
+@class KortforItem;
+
 /**
  * \ingroup libs
  * Geocoder/reverse geocoder
@@ -32,7 +34,7 @@
  * reverse geocoding
  * uses eithe Apple's, OIOREST or KFT reverse geocoder
  */
-+ (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler;
++ (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(KortforItem *kortforItem, NSError* error)) handler;
 + (void)oiorestReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler;
 
 @end
