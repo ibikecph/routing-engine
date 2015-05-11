@@ -23,7 +23,7 @@ import CoreLocation
     var zip: String { get set }
     var city: String { get set }
     var country: String { get set }
-    var location: CLLocation { get } // long, lat
+    var location: CLLocation? { get } // long, lat
     // getIconResourceId
     var relevance: Int { get set }
 }
@@ -39,7 +39,7 @@ import CoreLocation
     var zip: String = ""
     var city: String = ""
     var country: String = ""
-    var location: CLLocation = CLLocation()
+    var location: CLLocation? = CLLocation()
     var relevance: Int = 0
     
     init(name: String = "", address: String? = nil, street: String = "", number: String = "", zip: String = "", city: String = "", country: String = "", location: CLLocation) {
@@ -69,7 +69,7 @@ import CoreLocation
     }
     
     override var description: String {
-        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location.coordinate.latitude), \(location.coordinate.longitude)), Order: \(order), Relevance: \(relevance)"
+        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location?.coordinate.latitude), \(location?.coordinate.longitude)), Order: \(order), Relevance: \(relevance)"
     }
 }
 

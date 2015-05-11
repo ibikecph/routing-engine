@@ -19,7 +19,7 @@ import UIKit
     var zip: String
     var city: String
     var country: String = "Denmark"
-    var location: CLLocation = CLLocation()
+    var location: CLLocation? = CLLocation()
     var relevance: Int = 0
     
     init(jsonDictionary: AnyObject) {
@@ -41,6 +41,6 @@ import UIKit
     }
     
     override var description: String {
-        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location.coordinate.latitude), \(location.coordinate.longitude)), Order: \(order), Relevance: \(relevance)"
+        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location?.coordinate.latitude), \(location?.coordinate.longitude)), Order: \(order), Relevance: \(relevance)"
     }
 }

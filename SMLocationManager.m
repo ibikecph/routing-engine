@@ -59,7 +59,6 @@
     CLLocation *lastLocation = locations.lastObject;
     
 	hasValidLocation = NO;
-	lastValidLocation = nil;
 	
 	if (!signbit(lastLocation.horizontalAccuracy)) {
 		hasValidLocation = YES;

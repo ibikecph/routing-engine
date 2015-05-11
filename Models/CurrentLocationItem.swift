@@ -21,7 +21,7 @@ import CoreLocation
     var zip: String = ""
     var city: String = ""
     var country: String = ""
-    var location: CLLocation {
+    var location: CLLocation? {
         return SMLocationManager.instance().lastValidLocation
     }
     var relevance: Int = 0

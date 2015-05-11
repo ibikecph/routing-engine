@@ -21,7 +21,7 @@ import CoreLocation
     var zip: String = ""
     var city: String = ""
     var country: String = ""
-    var location: CLLocation = CLLocation()
+    var location: CLLocation? = CLLocation()
     var relevance: Int = 0
     
     var startDate: NSDate?
@@ -72,12 +72,12 @@ import CoreLocation
             "address" : self.address,
             "startDate" : NSKeyedArchiver.archivedDataWithRootObject(self.startDate!),
             "endDate" : NSKeyedArchiver.archivedDataWithRootObject(self.endDate!),
-            "lat" : self.location.coordinate.latitude,
-            "long" : self.location.coordinate.longitude
+            "lat" : self.location?.coordinate.latitude ?? 0,
+            "long" : self.location?.coordinate.longitude ?? 0
         ]
     }
     
     override var description: String {
-        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location.coordinate.latitude), \(location.coordinate.longitude)), Order: \(order), Relevance: \(relevance), Date: \(startDate) -> \(endDate)"
+        return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location?.coordinate.latitude), \(location?.coordinate.longitude)), Order: \(order), Relevance: \(relevance), Date: \(startDate) -> \(endDate)"
     }
 }
