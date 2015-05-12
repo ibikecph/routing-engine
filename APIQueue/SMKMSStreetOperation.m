@@ -39,8 +39,9 @@
     [set addCharactersInString:@","];
     
     NSMutableArray* addressArray= [NSMutableArray new];
-    for(NSDictionary* feature in json[@"features"]){
+    for (NSDictionary *feature in json[@"features"]) {
         KortforItem *item = [[KortforItem alloc] initWithJsonDictionary:feature];
+        item.isFromStreetSearch = YES;
         
         NSInteger relevance = [SMRouteUtils pointsForName:[[NSString stringWithFormat:@"%@ , %@ %@", item.street,
                                                             item.zip,

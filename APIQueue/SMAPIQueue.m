@@ -21,76 +21,55 @@
 	if (self) {
         [self setQueue:[[NSOperationQueue alloc] init]];
         self.queue.name = @"API queue";
-        if (maxOps == 0) {
-            [self.queue setMaxConcurrentOperationCount:MAX_CONCURENT_OPERATIONS];
-        } else {
-            [self.queue setMaxConcurrentOperationCount:maxOps];
-        }
-    [self.queue addObserver:self forKeyPath:@"operations" options:NSKeyValueObservingOptionNew context:NULL];
+        self.queue.maxConcurrentOperationCount = maxOps ?: MAX_CONCURENT_OPERATIONS;
+        [self.queue addObserver:self forKeyPath:@"operations" options:NSKeyValueObservingOptionNew context:NULL];
     }
     return self;
 }
 
-- (void)sleepOperationBody; {
-    sleep(0.5f);
-}
-
-- (void)addTasks:(NSString *)srchString {
-    UnknownSearchListItem *item = [SMAddressParser parseAddress:srchString];
-    if ((item.number == nil || [item.number isEqualToString:@""]) &&
-        (item.city == nil || [item.city isEqualToString:@""]) &&
-        (item.zip == nil || [item.zip isEqualToString:@""])) {
+- (void)addTasks:(NSString *)searchString {
+    UnknownSearchListItem *item = [SMAddressParser parseAddress:searchString];
+    if (item.number.length == 0 &&
+        item.city.length == 0 &&
+        item.zip.length == 0) {
         [self addKMSPlacesTask:item];
         [self addKMSStreetTask:item];
     } else {
         [self addKMSAddressTask:item];
     }
     
-    if ((item.number == nil || [item.number isEqualToString:@""]) && srchString.length > 2) {
+    if (item.number.length == 0 && searchString.length > 2) {
         [self addFoursquareTask:item];
     }
 }
 
 - (SMFoursquareOperation*)addFoursquareTask:(NSObject<SearchListItem> *)item {
-//    @synchronized (self.queue) {
-        SMFoursquareOperation * task = [[SMFoursquareOperation alloc] initWithItem:item andDelegate:self];
-        [task setQueuePriority:NSOperationQueuePriorityNormal];
-        [self.queue addOperation:task];
-        return task;
-//    }
-    return nil;
+    SMFoursquareOperation * task = [[SMFoursquareOperation alloc] initWithItem:item andDelegate:self];
+    [task setQueuePriority:NSOperationQueuePriorityNormal];
+    [self.queue addOperation:task];
+    return task;
 }
 
 - (SMKMSStreetOperation*)addKMSStreetTask:(NSObject<SearchListItem> *)item {
-//    @synchronized (self.queue) {
-        SMKMSStreetOperation * task = [[SMKMSStreetOperation alloc] initWithItem:item andDelegate:self];
-        [task setQueuePriority:NSOperationQueuePriorityNormal];
-        [self.queue addOperation:task];
-        return task;
-//    }
-    return nil;
+    SMKMSStreetOperation * task = [[SMKMSStreetOperation alloc] initWithItem:item andDelegate:self];
+    [task setQueuePriority:NSOperationQueuePriorityNormal];
+    [self.queue addOperation:task];
+    return task;
 }
 
 - (SMKMSAddressOperation*)addKMSAddressTask:(NSObject<SearchListItem> *)item {
-//    @synchronized (self.queue) {
-        SMKMSAddressOperation * task = [[SMKMSAddressOperation alloc] initWithItem:item andDelegate:self];
-        [task setQueuePriority:NSOperationQueuePriorityNormal];
-        [self.queue addOperation:task];
-        return task;
-//    }
-    return nil;
+    SMKMSAddressOperation * task = [[SMKMSAddressOperation alloc] initWithItem:item andDelegate:self];
+    [task setQueuePriority:NSOperationQueuePriorityNormal];
+    [self.queue addOperation:task];
+    return task;
 }
 
 - (SMKMSPlacesOperation*)addKMSPlacesTask:(NSObject<SearchListItem> *)item {
-//    @synchronized (self.queue) {
-        SMKMSPlacesOperation * task = [[SMKMSPlacesOperation alloc] initWithItem:item andDelegate:self];
-        [task setQueuePriority:NSOperationQueuePriorityNormal];
-        [self.queue addOperation:task];
-        return task;
-//    }
-    return nil;
+    SMKMSPlacesOperation * task = [[SMKMSPlacesOperation alloc] initWithItem:item andDelegate:self];
+    [task setQueuePriority:NSOperationQueuePriorityNormal];
+    [self.queue addOperation:task];
+    return task;
 }
-
 
 - (void)cancelTask:(SMAPIOperation*)task {
     @synchronized(self.queue) {
@@ -101,15 +80,13 @@
 #pragma mark - file download delegate
 
 - (void)stopAllRequests {
-//    @synchronized(self.queue) {
-        [self.queue cancelAllOperations];
-        debugLog(@"Cancel all operations!");
-//    }
+    [self.queue cancelAllOperations];
+    debugLog(@"Cancel all operations!");
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     if (object == self.queue && [keyPath isEqualToString:@"operations"]) {
-        debugLog(@"Operations queue: %@ count: %d", self.queue, self.queue.operationCount);
+        debugLog(@"Operations queue: %@ count: %ld", self.queue, self.queue.operationCount);
     }
 }
 

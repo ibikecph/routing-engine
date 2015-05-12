@@ -26,6 +26,7 @@ import CoreLocation
     
     var distance: Double
     var isPlace: Bool
+    var isFromStreetSearch: Bool = false
     
     init(jsonDictionary: AnyObject) {
         let json = JSON(jsonDictionary)
@@ -37,8 +38,6 @@ import CoreLocation
         } else {
             street = jsonProperties["navn"].stringValue
         }
-        name = street
-        address = street
         if let postalArea = jsonProperties["postdistrikt_navn"].string {
             city = postalArea
         } else {
@@ -76,6 +75,9 @@ import CoreLocation
         number = jsonProperties["husnr"].stringValue
         distance = jsonProperties["afstand_afstand"].doubleValue
         isPlace = jsonProperties["kategori"].string != nil
+        
+        name = "\(street) \(number), \(zip) \(city)"
+        address = name
     }
     
     override var description: String {

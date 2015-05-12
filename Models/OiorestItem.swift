@@ -31,7 +31,7 @@ import UIKit
         city = json["kommune"]["navn"].stringValue
         zip = json["postnummer"]["nr"].stringValue
         
-        name = "\(street) \(number), \(zip) \(country)"
+        name = "\(street) \(number), \(zip) \(city)"
         address = name
         
         // Location
