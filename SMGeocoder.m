@@ -256,14 +256,14 @@
  * use KMS to get coordinates at location.
  * we fetch 10 nearest coordinates and order by distance
  */
-+ (void)kortReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(KortforItem *kortforItem, NSError* error)) handler {
++ (void)kortReverseGeocode:(CLLocationCoordinate2D)coord synchronous:(BOOL)synchronous completionHandler:(void (^)(KortforItem *kortforItem, NSError* error)) handler {
     
     NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&hits=10&method=nadresse&geop=%lf,%lf&georef=EPSG:4326&georad=%d&outgeoref=EPSG:4326&login=%@&password=%@&geometry=false", KORT_SERVICE,
                            coord.longitude, coord.latitude, KORT_SEARCH_RADIUS, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     debugLog(@"Kort: %@", URLString);
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
     
-    [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
+    void (^completion)(NSURLResponse*, NSData*, NSError*) = ^(NSURLResponse *response, NSData *data, NSError *error) {
         if (error) {
             handler(nil, error);
             return;
@@ -279,10 +279,10 @@
             return;
         }
         NSDictionary * json = (NSDictionary*)res;
-    
+        
         NSMutableCharacterSet * set = [NSMutableCharacterSet whitespaceAndNewlineCharacterSet];
         [set addCharactersInString:@","];
-       
+        
         // Kortfor
         NSMutableArray *kortforItems = [NSMutableArray new];
         for (NSDictionary *feature in json[@"features"]){
@@ -314,11 +314,20 @@
             return;
         }
         handler(item, nil);
-    }];
+    };
+    
+    if (synchronous) {
+        NSURLResponse *response;
+        NSError *error;
+        NSData *data = [NSURLConnection sendSynchronousRequest:req returningResponse:&response error:&error];
+        completion(response, data, error);
+    } else {
+        [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:completion];
+    }
 }
 
-+ (void)reverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(KortforItem *kortforItem, NSError* error)) handler {
-    [SMGeocoder kortReverseGeocode:coord completionHandler:handler];
++ (void)reverseGeocode:(CLLocationCoordinate2D)coord synchronous:(BOOL)synchronous completionHandler:(void (^)(KortforItem *kortforItem, NSError* error)) handler {
+    [SMGeocoder kortReverseGeocode:coord synchronous:synchronous completionHandler:handler];
 }
 
 @end
