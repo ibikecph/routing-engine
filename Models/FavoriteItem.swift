@@ -66,11 +66,35 @@ import CoreLocation
     init(jsonDictionary: AnyObject) {
         let json = JSON(jsonDictionary)
         
-        number = ""
+        // Name and address
         name = json["name"].stringValue
         address = json["address"].stringValue
+        
+        // Dates
         startDate = NSDate()
         endDate = NSDate()
+        
+        let formatter = NSDateFormatter()
+        formatter.dateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'ZZZ" // Format 2015-06-10T13:45:31ZUTC
+        if let
+            dateString = json["startDate"].string,
+            date = formatter.dateFromString(dateString)
+        {
+            startDate = date
+        }
+        if let
+            dateString = json["endDate"].string,
+            date = formatter.dateFromString(dateString)
+        {
+            endDate = date
+        }
+        
+        // Parse address string to make details
+        let parsedAddressItem = SMAddressParser.parseAddress(address)
+        number = parsedAddressItem.number
+        city = parsedAddressItem.city
+        zip = parsedAddressItem.zip
+        street = parsedAddressItem.street
         
         // Location
         let latitude = json["lattitude"].doubleValue
@@ -93,13 +117,17 @@ import CoreLocation
     init(plistDictionary: NSDictionary) {
         let json = JSON(plistDictionary)
         
-        // Street, name, address, city, zip
-        number = json["husnr"].stringValue
-        city = json["kommune"]["navn"].stringValue
-        zip = json["postnummer"]["nr"].stringValue
-        
+        // Name and address
         name = json["name"].stringValue
         address = json["address"].stringValue
+        
+        // Street, name, address, city, zip. Fallback to full address string
+        let parsedAddressItem = SMAddressParser.parseAddress(address)
+        number = json["husnr"].string ?? parsedAddressItem.number
+        city = json["by"].string ?? parsedAddressItem.city
+        zip = json["postnummer"].string ?? parsedAddressItem.zip
+        street = json["vej"].string ?? parsedAddressItem.street
+        
         if let data = plistDictionary["startDate"] as? NSData {
             startDate = NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSDate
         }
@@ -123,6 +151,10 @@ import CoreLocation
             "identifier" : identifier,
             "name" :  name,
             "address" : address,
+            "husnr" : number,
+            "by" : city,
+            "postnummer" : zip,
+            "vej" : street,
             "startDate" : NSKeyedArchiver.archivedDataWithRootObject(startDate ?? NSDate()),
             "endDate" : NSKeyedArchiver.archivedDataWithRootObject(endDate ?? NSDate()),
             "origin" : origin.rawValue,
@@ -130,7 +162,6 @@ import CoreLocation
             "long" : location?.coordinate.longitude ?? 0
         ]
     }
-    
     
     override var description: String {
         return "Name: \(name), Address: \(address), Street: \(street), Number: \(number), Zip: \(zip), City: \(city), Country: \(country), Location: (\(location?.coordinate.latitude), \(location?.coordinate.longitude)), Order: \(order), Relevance: \(relevance), Date: \(startDate) -> \(endDate), Origin: \(origin), Id: \(identifier)"
