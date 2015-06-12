@@ -60,6 +60,13 @@ import CoreLocation
             endDate = NSKeyedUnarchiver.unarchiveObjectWithData(endDateData) as? NSDate
         }
         
+        // Parse address string to make details
+        let parsedAddressItem = SMAddressParser.parseAddress(address)
+        number = parsedAddressItem.number
+        city = parsedAddressItem.city
+        zip = parsedAddressItem.zip
+        street = parsedAddressItem.street
+        
         // Location
         let latitude = json["lat"].doubleValue
         let longitude = json["long"].doubleValue
