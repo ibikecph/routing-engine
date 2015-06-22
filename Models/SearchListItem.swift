@@ -23,7 +23,7 @@ import CoreLocation
     var zip: String { get set }
     var city: String { get set }
     var country: String { get set }
-    var location: CLLocation? { get } // long, lat
+    var location: CLLocation? { get set } // long, lat
     // getIconResourceId
     var relevance: Int { get set }
 }

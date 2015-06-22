@@ -22,7 +22,12 @@ import CoreLocation
     var city: String = ""
     var country: String = ""
     var location: CLLocation? {
-        return SMLocationManager.instance().lastValidLocation
+        get {
+            return SMLocationManager.instance().lastValidLocation
+        }
+        set {
+            println("Can't set location on CurrentLocationItem")
+        }
     }
     var relevance: Int = 0
     
