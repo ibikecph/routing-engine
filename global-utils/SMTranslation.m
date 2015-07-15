@@ -27,7 +27,10 @@
 
 #pragma mark - localization / string decoding
 
-+(NSString*)decodeString:(NSString*) txt{
++(NSString*)decodeString:(NSString*) txt {
+    if (txt.length == 0) {
+        return txt;
+    }
     NSString *localized = NSLocalizedString(txt, NULL);
     if ([localized isEqualToString:txt]) {
         localized = NSLocalizedStringFromTable(txt, @"Localizable_IBC", NULL);
