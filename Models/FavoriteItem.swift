@@ -61,6 +61,13 @@ import CoreLocation
         self.country = other.country
         self.location = other.location
         self.origin = .Unknown
+        self.relevance = other.relevance
+        if let favorite = other as? FavoriteItem {
+            self.startDate = favorite.startDate
+            self.endDate = favorite.endDate
+            self.origin = favorite.origin
+            self.identifier = favorite.identifier
+        }
     }
     
     init(jsonDictionary: AnyObject) {
