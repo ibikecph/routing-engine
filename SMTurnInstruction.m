@@ -14,7 +14,7 @@
 
 @implementation SMTurnInstruction
 @synthesize drivingDirection= _drivingDirection;
-NSString *iconsBlack[] = {
+NSString *icons[] = {
     @"no icon",
     @"up",
     @"right-ward",
@@ -34,28 +34,6 @@ NSString *iconsBlack[] = {
     @"walk",
     @"bike",
     @"near-destination",
-};
-
-NSString *iconsWhite[] = {
-    @"no icon",
-    @"white-up",
-    @"white-right-ward",
-    @"white-right",
-    @"white-right",
-    @"white-u-turn",
-    @"white-left",
-    @"white-left",
-    @"white-left-ward",
-    @"location",
-    @"white-up",
-    @"white-roundabout",
-    @"white-roundabout",
-    @"white-roundabout",
-    @"white-up",
-    @"white-flag",
-    @"white-walk",
-    @"white-bike",
-    @"white-near-destination",
 };
 
 
@@ -137,7 +115,7 @@ NSString *directionString(NSString *abbreviation) {
 
 -(void)setDrivingDirection:(TurnDirection)drivingDirection{
     _drivingDirection = drivingDirection;
-    self.imageName = iconsBlack[self.drivingDirection];
+    self.imageName = icons[self.drivingDirection];
 }
 
 @end
