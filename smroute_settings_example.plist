@@ -9,9 +9,9 @@
 	<key>OSRM_ADDRESS</key>
 	<string>routes.ibikecph.dk</string>
 	<key>OSRM_SERVER</key>
-	<string>http://routes.ibikecph.dk</string>
+	<string>https://routes.ibikecph.dk</string>
 	<key>OSRM_SERVER_CARGO</key>
-	<string>http://routes.ibikecph.dk/cargobike</string>
+	<string>https://routes.ibikecph.dk/cargobike</string>
 	<key>PLACES_SEARCH_RADIUS</key>
 	<string>20000</string>
 	<key>FOURSQUARE_SEARCH_RADIUS</key>

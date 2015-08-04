@@ -32,7 +32,7 @@
 
 - (void)findPlacesForLocation:(CLLocation*) loc {
     self.coord = loc;
-    NSString* s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f,%@.json", loc.coordinate.latitude, loc.coordinate.longitude, OIOREST_SEARCH_RADIUS];
+    NSString* s = [NSString stringWithFormat:@"https://geo.oiorest.dk/adresser/%f,%f,%@.json", loc.coordinate.latitude, loc.coordinate.longitude, OIOREST_SEARCH_RADIUS];
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
     if (self.conn) {
         [self.conn cancel];

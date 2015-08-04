@@ -31,7 +31,7 @@
 }
 
 + (void)oiorestGeocode:(NSString*)str completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler{
-    NSString * s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser.json?q=%@", [str urlEncode]];
+    NSString * s = [NSString stringWithFormat:@"https://geo.oiorest.dk/adresser.json?q=%@", [str urlEncode]];
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
     [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse * response, NSData * data, NSError *error) {
         
@@ -62,7 +62,7 @@
 }
 
 + (void)kortPlaceGeocode:(NSString*)str completionHandler:(void (^)(NSArray* placemarks, NSError* error)) handler {
-    NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=sted&stednavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&hits=%@", KORT_SERVICE,
+    NSString* URLString= [[NSString stringWithFormat:@"https://kortforsyningen.kms.dk/?servicename=%@&method=sted&stednavn=*%@*&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&hits=%@", KORT_SERVICE,
                            str, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password, [SMRouteSettings sharedInstance].kort_max_results] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
     [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse * response, NSData * data, NSError *error) {
@@ -114,7 +114,7 @@
     
     s = [arr componentsJoinedByString:@"&"];
     
-    NSString * URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&method=adresse&%@&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&hits=%@&geometry=true", KORT_SERVICE,
+    NSString * URLString= [[NSString stringWithFormat:@"https://kortforsyningen.kms.dk/?servicename=%@&method=adresse&%@&geop=%lf,%lf&georef=EPSG:4326&outgeoref=EPSG:4326&login=%@&password=%@&hits=%@&geometry=true", KORT_SERVICE,
                             s, [SMLocationManager instance].lastValidLocation.coordinate.longitude, [SMLocationManager instance].lastValidLocation.coordinate.latitude, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password, [SMRouteSettings sharedInstance].kort_max_results] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
@@ -210,7 +210,7 @@
 
 
 + (void)oiorestReverseGeocode:(CLLocationCoordinate2D)coord completionHandler:(void (^)(NSDictionary * response, NSError* error)) handler {
-    NSString* s = [NSString stringWithFormat:@"http://geo.oiorest.dk/adresser/%f,%f.json", coord.latitude, coord.longitude];
+    NSString* s = [NSString stringWithFormat:@"https://geo.oiorest.dk/adresser/%f,%f.json", coord.latitude, coord.longitude];
     NSURLRequest* req = [NSURLRequest requestWithURL:[NSURL URLWithString:s]];
     
     [NSURLConnection sendAsynchronousRequest:req queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
@@ -258,7 +258,7 @@
  */
 + (void)kortReverseGeocode:(CLLocationCoordinate2D)coord synchronous:(BOOL)synchronous completionHandler:(void (^)(KortforItem *kortforItem, NSError* error)) handler {
     
-    NSString* URLString= [[NSString stringWithFormat:@"http://kortforsyningen.kms.dk/?servicename=%@&hits=10&method=nadresse&geop=%lf,%lf&georef=EPSG:4326&georad=%d&outgeoref=EPSG:4326&login=%@&password=%@&geometry=false", KORT_SERVICE,
+    NSString* URLString= [[NSString stringWithFormat:@"https://kortforsyningen.kms.dk/?servicename=%@&hits=10&method=nadresse&geop=%lf,%lf&georef=EPSG:4326&georad=%d&outgeoref=EPSG:4326&login=%@&password=%@&geometry=false", KORT_SERVICE,
                            coord.longitude, coord.latitude, KORT_SEARCH_RADIUS, [SMRouteSettings sharedInstance].kort_username, [SMRouteSettings sharedInstance].kort_password] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     debugLog(@"Kort: %@", URLString);
     NSURLRequest * req = [NSURLRequest requestWithURL:[NSURL URLWithString:URLString]];
