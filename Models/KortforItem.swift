@@ -63,7 +63,7 @@ import CoreLocation
         } else if let coordinates = jsonGeometry["coordinates"].array {
             latitude = coordinates[1].doubleValue
             longitude = coordinates[0].doubleValue
-        }  else if let boundingBox = jsonGeometry["bbox"].array {
+        } else if let boundingBox = json["bbox"].array {
             if count(boundingBox) > 3 {
                 latitude = (boundingBox[1].doubleValue + boundingBox[3].doubleValue) / 2
                 longitude = (boundingBox[0].doubleValue + boundingBox[2].doubleValue) / 2
