@@ -35,7 +35,7 @@
 		hasValidLocation = NO;
 		locationManager = [[CLLocationManager alloc] init];
         locationManager.delegate = self;
-        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation;
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest;
         locationManager.distanceFilter = kCLDistanceFilterNone;
 		
         locationServicesEnabled = NO;
