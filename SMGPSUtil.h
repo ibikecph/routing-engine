@@ -34,6 +34,6 @@ BOOL sameCoordinates(CLLocation *loc1, CLLocation *loc2);
  * Decoder for the Encoded Polyline Algorithm Format
  * https://developers.google.com/maps/documentation/utilities/polylinealgorithm
  */
-+ (NSMutableArray*)decodePolyline:(NSString *)encodedString;
++ (NSMutableArray*)decodePolyline:(NSString *)encodedString precision:(double)precision;
 
 @end

@@ -32,10 +32,16 @@
 - (void) routeRecalculationDone;
 @end
 
-typedef enum  {
-    SMRouteTypeNormal = 0,
-    SMRouteTypeTransport = 1
-}SMRouteType;
+typedef enum SMRouteType : NSUInteger {
+    SMRouteTypeBike = 0,
+    SMRouteTypeWalk = 1,
+    SMRouteTypeSTrain = 2,
+    SMRouteTypeMetro = 3,
+    SMRouteTypeBus = 4,
+    SMRouteTypeFerry = 5,
+    SMRouteTypeTrain = 6,
+
+} SMRouteType;
 
 @interface SMRoute : NSObject <SMRequestOSRMDelegate> {
     BOOL approachingTurn;
@@ -58,6 +64,11 @@ typedef enum  {
 
 @property CLLocationCoordinate2D locationStart;
 @property CLLocationCoordinate2D locationEnd;
+@property NSString *startDescription;
+@property NSString *endDescription;
+@property NSDate *startDate;
+@property NSDate *endDate;
+@property NSString *transportLine;
 @property BOOL recalculationInProgress;
 @property NSInteger estimatedTimeForRoute;
 @property NSInteger estimatedRouteDistance;

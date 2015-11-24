@@ -222,7 +222,7 @@ double RadiansToDegrees(double radians) {return radians * 180/M_PI;};
  * Decoder for the Encoded Polyline Algorithm Format
  * https://developers.google.com/maps/documentation/utilities/polylinealgorithm
  */
-+ (NSMutableArray*)decodePolyline:(NSString *)encodedString {
++ (NSMutableArray*)decodePolyline:(NSString *)encodedString precision:(double)precision {
     
     const char *bytes = [encodedString UTF8String];
     size_t len = strlen(bytes);
@@ -246,9 +246,8 @@ double RadiansToDegrees(double radians) {return radians * 180/M_PI;};
             delta = (delta & 0x1) ? ((~delta >> 1) | 0x80000000) : (delta >> 1);
             (k == 0) ? (lat += delta) : (lng += delta);
         }
-        //      debugLog(@"decodePolyline(): (%d, %d)", lat, lng);
-        
-        [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / ROUTE_POLYLINE_PRECISION) longitude:((double)lng / ROUTE_POLYLINE_PRECISION)]];
+
+        [locations addObject:[[CLLocation alloc] initWithLatitude:((double)lat / precision) longitude:((double)lng / precision)]];
     }
     
     return locations;

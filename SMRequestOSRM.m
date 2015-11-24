@@ -116,38 +116,50 @@ static dispatch_queue_t reachabilityQueue;
 
 - (void)getRouteFrom:(CLLocationCoordinate2D)start to:(CLLocationCoordinate2D)end via:(NSArray *)viaPoints checksum:(NSString*)chksum andStartHint:(NSString*)startHint destinationHint:(NSString*)hint andZ:(NSInteger)z{
     [self runBlockIfServerReachable:^{
-        
+
         self.currentZ = z;
         self.currentRequest = @"getRouteFrom:to:via:";
-        
-        NSMutableString * s1 =[NSMutableString stringWithFormat:@"%@/viaroute?z=%d&alt=false", self.osrmServer, z];
-        
-        if (startHint) {
-            s1 = [NSMutableString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@", s1, start.latitude, start.longitude, startHint];
+
+
+        BOOL isBrokenRoute = [self.osrmServer rangeOfString:@"api/journey"].location != NSNotFound;
+
+        NSString *requestString = @"";
+
+        if (isBrokenRoute) {
+            requestString = [self.osrmServer stringByAppendingFormat:@"?&loc[]=%.6f,%.6f&loc[]=%.6f,%.6f", start.latitude, start.longitude, end.latitude, end.longitude];
         } else {
-            s1 = [NSMutableString stringWithFormat:@"%@&loc=%.6f,%.6f", s1, start.latitude, start.longitude];
-        }
-        
-        if (viaPoints) {
-            for (CLLocation *point in viaPoints)
-                [s1 appendFormat:@"&loc=%f.6,%.6f", point.coordinate.latitude, point.coordinate.longitude];
-        }
-        NSString *s = @"";
-        
-        if (chksum) {
-            if (hint) {
-                s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@&instructions=true&checksum=%@", s1, end.latitude, end.longitude, hint, chksum];
+            NSMutableString * s1 =[NSMutableString stringWithFormat:@"%@/viaroute?z=%d&alt=false", self.osrmServer, z];
+            
+            if (startHint) {
+                s1 = [NSMutableString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@", s1, start.latitude, start.longitude, startHint];
             } else {
-                s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true&checksum=%@", s1, end.latitude, end.longitude, chksum];
+                s1 = [NSMutableString stringWithFormat:@"%@&loc=%.6f,%.6f", s1, start.latitude, start.longitude];
             }
-        } else {
-            s = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true", s1, end.latitude, end.longitude];
+            
+            if (viaPoints) {
+                for (CLLocation *point in viaPoints)
+                    [s1 appendFormat:@"&loc=%f.6,%.6f", point.coordinate.latitude, point.coordinate.longitude];
+            }
+            
+            if (chksum) {
+                if (hint) {
+                    requestString = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&hint=%@&instructions=true&checksum=%@", s1, end.latitude, end.longitude, hint, chksum];
+                } else {
+                    requestString = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true&checksum=%@", s1, end.latitude, end.longitude, chksum];
+                }
+            } else {
+                requestString = [NSString stringWithFormat:@"%@&loc=%.6f,%.6f&instructions=true", s1, end.latitude, end.longitude];
+            }
         }
+
+        debugLog(@"%@", requestString);
         
-        debugLog(@"%@", s);
-        
-        NSMutableURLRequest * req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:s]];
+        NSMutableURLRequest * req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:requestString]];
         [req setValue:USER_AGENT forHTTPHeaderField:@"User-Agent"];
+        if (isBrokenRoute) {
+            [req setValue:@"application/vnd.ibikecph.v1" forHTTPHeaderField:@"Accept"];
+            [req setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+        }
         if (self.conn) {
             [self.conn cancel];
             self.conn = nil;
@@ -198,7 +210,7 @@ static dispatch_queue_t reachabilityQueue;
     if ([self.responseData length] > 0) {
         NSString * str = [[NSString alloc] initWithData:self.responseData encoding:NSUTF8StringEncoding];
         debugLog(@"%@", str);
-        id r = [NSJSONSerialization JSONObjectWithData:self.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithData:self.responseData];
+        id r = [NSJSONSerialization JSONObjectWithData:self.responseData options:NSJSONReadingAllowFragments error:nil];
         if ([self.currentRequest isEqualToString:@"findNearestPointForStart:andEnd:"]) {
             if (self.locStep > 1) {
                 if (r[@"mapped_coordinate"] && [r[@"mapped_coordinate"] isKindOfClass:[NSArray class]] && ([r[@"mapped_coordinate"] count] > 1)) {
@@ -219,7 +231,7 @@ static dispatch_queue_t reachabilityQueue;
                 [self.delegate request:self finishedWithResult:r];
             }
         } else {
-            
+
             if (!r || ([r isKindOfClass:[NSDictionary class]] == NO) || ([r[@"status"] intValue] != 0)) {
                 if (self.currentZ == DEFAULT_Z) {
                     if (self.originalJSON) {
@@ -245,7 +257,7 @@ static dispatch_queue_t reachabilityQueue;
                     self.originalStartHint = [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"%@", r[@"hint_data"][@"locations"][0]]];
                     self.originalDestinationHint = [NSString stringWithFormat:@"%@", [NSString stringWithFormat:@"%@", [r[@"hint_data"][@"locations"] lastObject]]];
                     if (r[@"route_geometry"]) {
-                        NSMutableArray * points = [SMGPSUtil decodePolyline:r[@"route_geometry"]];
+                        NSMutableArray * points = [SMGPSUtil decodePolyline:r[@"route_geometry"] precision:[SMRouteSettings sharedInstance].route_polyline_precision];
                         CLLocationCoordinate2D start = ((CLLocation*)[points objectAtIndex:0]).coordinate;
                         CLLocationCoordinate2D end = ((CLLocation*)[points lastObject]).coordinate;
                         [self getRouteFrom:start to:end via:self.originalViaPoints checksum:[NSString stringWithFormat:@"%@", r[@"hint_data"][@"checksum"]] andStartHint:self.originalStartHint destinationHint:self.originalDestinationHint andZ:DEFAULT_Z];
