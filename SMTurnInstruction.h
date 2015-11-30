@@ -12,11 +12,7 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
-
-#define kVehicleBike 1
-#define kVehicleWalk 2
-#define kVehicleFerry 3
-#define kVehicleTrain 4
+#import "SMRoute.h"
 
 typedef enum {
     NoTurn = 0, //Give no instruction at all
@@ -37,6 +33,8 @@ typedef enum {
     ReachedYourDestination = 15,
     StartPushingBikeInOneway = 16,
     StopPushingBikeInOneway = 17,
+    BoardPublicTransport = 18,
+    UnboardPublicTrasnport = 19,
     ReachingDestination = 100
 } TurnDirection;
 
@@ -52,13 +50,18 @@ typedef enum {
 //    __weak NSArray *waypoints;
 }
 
-@property (nonatomic, assign)TurnDirection drivingDirection;
+@property (nonatomic, assign) TurnDirection drivingDirection;
 @property (nonatomic, strong) NSString *ordinalDirection;
 @property (nonatomic, strong) NSString *wayName;
 @property int lengthInMeters;
 @property int timeInSeconds;
 @property (nonatomic, strong) NSString *lengthWithUnit;
-@property(nonatomic, strong) NSString* imageName;
+@property (nonatomic, strong) NSString* imageName;
+@property (nonatomic, assign) SMRouteType routeType;
+@property (nonatomic, strong) NSString* routeLineName;
+@property (nonatomic, strong) NSString* routeLineStart;
+@property (nonatomic, strong) NSString* routeLineDestination;
+@property (nonatomic, strong) NSDate *routeLineTime;
 /**
  * Length to next turn in units (km or m)
  * This value will not auto update

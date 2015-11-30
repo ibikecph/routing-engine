@@ -13,6 +13,16 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 
+typedef enum SMRouteType : NSUInteger {
+    SMRouteTypeBike = 0,
+    SMRouteTypeWalk = 1,
+    SMRouteTypeSTrain = 2,
+    SMRouteTypeMetro = 3,
+    SMRouteTypeBus = 4,
+    SMRouteTypeFerry = 5,
+    SMRouteTypeTrain = 6,
+} SMRouteType;
+
 #import "SMTurnInstruction.h"
 #import "SMRequestOSRM.h"
 
@@ -31,17 +41,6 @@
 - (void) routeRecalculationStarted;
 - (void) routeRecalculationDone;
 @end
-
-typedef enum SMRouteType : NSUInteger {
-    SMRouteTypeBike = 0,
-    SMRouteTypeWalk = 1,
-    SMRouteTypeSTrain = 2,
-    SMRouteTypeMetro = 3,
-    SMRouteTypeBus = 4,
-    SMRouteTypeFerry = 5,
-    SMRouteTypeTrain = 6,
-
-} SMRouteType;
 
 @interface SMRoute : NSObject <SMRequestOSRMDelegate> {
     BOOL approachingTurn;
@@ -74,6 +73,7 @@ typedef enum SMRouteType : NSUInteger {
 @property NSInteger estimatedRouteDistance;
 @property NSString * routeChecksum;
 @property NSString * destinationHint;
+@property CGFloat distanceToFinishRange;
 
 @property (nonatomic, strong) CLLocation * lastCorrectedLocation;
 @property double lastCorrectedHeading;

@@ -47,6 +47,7 @@
         self.osrmServer = OSRM_SERVER;
         self.nextWaypoint = 0;
         self.transportLine = @"";
+        self.distanceToFinishRange = 10;
     }
     return self;
 }
@@ -74,102 +75,6 @@
     }
     return self;
 }
-
-- (BOOL) isTooFarFromRouteSegment:(CLLocation *)loc from:(SMTurnInstruction *)turnA to:(SMTurnInstruction *)turnB maxDistance:(double)maxDistance {
-    double min = MAXFLOAT;
-
-    for (int i = MAX(self.lastVisitedWaypointIndex, 0); i < turnB.waypointsIndex; i++) {
-        CLLocation *a = [self.waypoints objectAtIndex:i];
-        CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
-        double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
-        if (d < 0.0)
-            continue;
-        if (d <= min) {
-            min = d;
-            self.lastVisitedWaypointIndex = i;
-        }
-        if (min < 2) {
-            // Close enough :)
-            break;
-        }
-    }
-    
-    if (min <= maxDistance && min < self.distanceFromRoute) {
-        self.distanceFromRoute = min;
-
-        CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
-        CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
-        CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
-
-//        double d = distanceFromLineInMeters(coord, a.coordinate, b.coordinate);
-
-        
-//        self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:[[CLLocation alloc] initWithLatitude:coord.latitude longitude:coord.longitude]];
-        if ([a distanceFromLocation:b] > 0.0f) {
-            debugLog(@"=============================");
-            debugLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
-            debugLog(@"Location A: %@", a);
-            debugLog(@"Location B: %@", b);
-            self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:a andEndLocation:b];
-            debugLog(@"Heading: %f", self.lastCorrectedHeading);
-            debugLog(@"Closest point: (%f %f)", coord.latitude, coord.longitude);
-            debugLog(@"=============================");
-        }
-        if (self.visitedLocations && self.visitedLocations.count > 0) {
-            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
-        }
-    }
-    
-    return min > maxDistance;
-}
-
-- (BOOL)checkLocation:(CLLocation*)loc withMaxDistance:(CGFloat)maxDistance {
-    SMTurnInstruction *currentTurn = [self.turnInstructions objectAtIndex:0];
-    SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:MIN([self.turnInstructions count] - 1, MAX_TURNS)];
-    if (nextTurn) {
-        if (![self isTooFarFromRouteSegment:loc from:nil to:nextTurn maxDistance:maxDistance])  {
-            if (self.lastVisitedWaypointIndex > currentTurn.waypointsIndex) {
-                [self updateSegmentBasedOnWaypoint];
-                approachingTurn = YES;
-            }
-            self.snapArrow = YES;
-            return NO;
-        }
-    }
-    self.snapArrow = NO;
-    return YES;
-}
-
-- (BOOL) isTooFarFromRoute:(CLLocation *)loc maxDistance:(int)maxDistance {
-    /**
-     * last turn we passed
-     */
-    SMTurnInstruction *lastTurn = [self.pastTurnInstructions lastObject];
-    if (self.turnInstructions.count > 0) {
-        SMTurnInstruction *currentTurn = [self.turnInstructions objectAtIndex:0];
-        @synchronized(self.turnInstructions) {
-            self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:loc.coordinate altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
-            if (!lastTurn) {
-                /**
-                 * we have passed no turns. check if we have managed to get on the route somehow
-                 */
-                if (currentTurn) {
-                    double currentDistanceFromStart = [loc distanceFromLocation:currentTurn.loc];
-                    debugLog(@"Current distance from start: %.6f", currentDistanceFromStart);
-                    if (currentDistanceFromStart > maxDistance) {
-                        return [self checkLocation:loc withMaxDistance:maxDistance];                        
-                    }
-                }
-                return NO;
-            }
-            
-            self.distanceFromRoute = MAXFLOAT;
-            return [self checkLocation:loc withMaxDistance:maxDistance];            
-        }
-    }
-    return NO;
-}
-
 
 - (double)getCorrectedHeading {
     return self.lastCorrectedHeading;
@@ -221,10 +126,6 @@
 
 }
 
-//double course(CLLocation *loc1, CLLocation *loc2) {
-//    return 0.0;
-//}
-
 - (void) updateSegment {
     debugLog(@"Update segment!!!!");
     if (!self.delegate) {
@@ -243,106 +144,15 @@
         }
         
 
-        if (self.turnInstructions.count == 0)
+        if (self.turnInstructions.count == 0) {
             [self.delegate reachedDestination];
+        }
     }
 }
 
 - (BOOL) approachingFinish {
     return /*approachingTurn && */self.turnInstructions.count == 1;
 }
-
-//- (void) visitLocation:(CLLocation *)loc {
-//    
-//    @synchronized(self.visitedLocations) {
-//        [self updateDistances:loc];
-//        if (!self.visitedLocations)
-//            self.visitedLocations = [NSMutableArray array];
-//        [self.visitedLocations addObject:@{
-//         @"location" : loc,
-//         @"date" : [NSDate date]
-//         }];
-//    }
-//
-//    @synchronized(self.turnInstructions) {
-//        if (self.turnInstructions.count <= 0)
-//            return;        
-//    }
-//    
-//    @synchronized(self.recalcMutex) {
-//        if (self.recalculationInProgress) {
-//            return;
-//        }
-//    }
-//
-//
-//    // Check if we are finishing:
-//    double distanceToFinish = [loc distanceFromLocation:[self getEndLocation]];
-//    double speed = loc.speed > 0 ? loc.speed : 5;
-//    int timeToFinish = 100;
-//    if (speed > 0) {
-//        timeToFinish = distanceToFinish / speed;
-//        debugLog(@"finishing in %d", timeToFinish);
-//    }
-//    /**
-//     * are we close to the finish (< 10m or 3s left)?
-//     */
-//    if (distanceToFinish < 10.0 || timeToFinish <= 3) {
-//        if (self.turnInstructions.count == 1) {
-//            /**
-//             * if there was only one instruction left go through usual channels
-//             */
-//            approachingTurn = NO;
-//            [self updateSegmentBasedOnWaypoint];
-//            return;
-//        } else {
-//            /**
-//             * we have somehow skipped most of the route (going through a park or unknown street)
-//             */
-//            [self.delegate reachedDestination];
-//            return;
-//        }
-//    }
-//
-////    // are we approaching some turn or are we past some turn
-////    if (approachingTurn) {
-////        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:0];
-////        
-////        double d = [loc distanceFromLocation:[nextTurn getLocation]];
-////        if (self.turnInstructions.count > 0 && d > 20.0) {
-////            if (loc.course >= 0.0)
-////                debugLog(@"loc.course: %f turn->azimuth: %f", loc.course, nextTurn.azimuth);
-////
-////            approachingTurn = NO;
-////
-////            debugLog(@"Past turn: %@", nextTurn.wayName);
-////            [self updateSegmentBasedOnWaypoint];
-////        }
-////    } else if (!approachingTurn) {
-////        for (int i = 0; i < self.turnInstructions.count; i++) {
-////            SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:i];
-////            double distanceFromTurn = [loc distanceFromLocation:[nextTurn getLocation]];
-////            if ((distanceFromTurn < 10.0 || (i == self.turnInstructions.count - 1 && distanceFromTurn < 20.0))) {
-//////                && (loc.course < 0.0 || fabs(loc.course - nextTurn.azimuth) <= 20.0)) {
-////                approachingTurn = YES;
-////                if (i > 0)
-////                    [self updateSegmentBasedOnWaypoint];
-////                debugLog(@"Approaching turn %@ in %.1g m", nextTurn.wayName, distanceFromTurn);
-////                break;
-////            }
-////        }
-////    }
-//    
-//    // Check if we went too far from the calculated route and, if so, recalculate route
-//    // max allowed distance depends on location's accuracy
-//    int maxD = loc.horizontalAccuracy >= 0 ? (loc.horizontalAccuracy / 3 + 20) : MAX_DISTANCE_FROM_PATH;
-//    if (![self approachingFinish] && self.delegate && [self isTooFarFromRoute:loc maxDistance:maxD]) {
-//        approachingTurn = NO;
-//        [self recalculateRoute:loc];
-//    }
-//    
-//    
-//}
 
 - (CLLocation *) getStartLocation {
     if (self.waypoints && self.waypoints.count > 0)
@@ -479,8 +289,9 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.waypoints = [SMGPSUtil decodePolyline:jsonRoot[@"route_geometry"] precision:polylinePrecision];
     }
 
-    if (self.waypoints.count < 2)
+    if (self.waypoints.count < 2) {
         return NO;
+    }
 
     @synchronized(self.turnInstructions) {
         self.turnInstructions = [NSMutableArray array];
@@ -529,22 +340,33 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             NSArray * arr = [[NSString stringWithFormat:@"%@", jsonObject[0]] componentsSeparatedByString:@"-"];
             int pos = [(NSString*)arr[0] intValue];
             
-            if (pos <= 17) {
+            if (pos <= 19) {
                 instruction.drivingDirection = pos;
+                instruction.routeType = self.routeType;
+                instruction.routeLineName = self.transportLine;
+                if (pos == 18) {
+                    instruction.routeLineStart = self.startDescription;
+                    instruction.routeLineDestination = self.endDescription;
+                    instruction.routeLineTime = self.startDate;
+                } else if (pos == 19) {
+                    instruction.routeLineStart = self.startDescription;
+                    instruction.routeLineDestination = self.endDescription;
+                    instruction.routeLineTime = self.endDate;
+                }
                 if (arr.count > 1 && arr[1]) {
                     instruction.ordinalDirection = arr[1];
                 } else {
                     instruction.ordinalDirection = @"";
                 }
                 instruction.wayName = (NSString *)jsonObject[1];
-                
+            
                 if ([instruction.wayName rangeOfString:@"\\{.+\\:.+\\}" options:NSRegularExpressionSearch].location != NSNotFound) {
                     instruction.wayName = translateString(instruction.wayName);
                 }
                 
                 instruction.lengthInMeters = prevlengthInMeters;
-                prevlengthInMeters = [(NSNumber *)[jsonObject objectAtIndex:2] intValue];
-                instruction.timeInSeconds = [(NSNumber *)[jsonObject objectAtIndex:4] intValue];
+                prevlengthInMeters = [(NSNumber *)jsonObject[2] intValue];
+                instruction.timeInSeconds = [(NSNumber *)jsonObject[4] intValue];
                 instruction.lengthWithUnit = prevlengthWithUnit;
                 /**
                  * Save length to next turn with units so we don't have to generate it each time
@@ -552,7 +374,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                  */
                 instruction.fixedLengthWithUnit = formatDistance(prevlengthInMeters);
                 prevlengthWithUnit = (NSString *)jsonObject[5];
-                instruction.directionAbrevation = (NSString *)[jsonObject objectAtIndex:6];
+                instruction.directionAbrevation = (NSString *)jsonObject[6];
                 instruction.azimuth = [(NSNumber *)jsonObject[7] floatValue];
                 instruction.vehicle = 0;
                 if ([jsonObject count] > 8) {
@@ -571,18 +393,15 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                 
                 int position = [(NSNumber *)jsonObject[3] intValue];
                 instruction.waypointsIndex = position;
-                //          instruction->waypoints = route;
                 
-                if (self.waypoints && position >= 0 && position < self.waypoints.count)
+                if (self.waypoints && position >= 0 && position < self.waypoints.count) {
                     instruction.loc = self.waypoints[position];
+                }
                 
                 @synchronized(self.turnInstructions) {
                     [self.turnInstructions addObject:instruction];
                 }
-                
             }
-//          [route.turnInstructions addObject:[SMTurnInstruction parseInstructionFromJson:obj withRoute:route.waypoints]];
-            
         }
         
         self.longestDistance = 0.0f;
@@ -591,7 +410,6 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         if ([jsonRoot[@"route_name"] isKindOfClass:[NSArray class]] && [jsonRoot[@"route_name"] count] > 0) {
             self.longestStreet = [jsonRoot[@"route_name"] firstObject];
         }
-//        self.longestStreet = [jsonRoot[@"route_name"] componentsJoinedByString:@", "];
         if (self.longestStreet == nil || [[self.longestStreet stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] isEqualToString:@""]) {
             for (int i = 1; i < self.turnInstructions.count - 1; i++) {
                 SMTurnInstruction * inst = self.turnInstructions[i];
@@ -638,7 +456,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
     else if (self.turnInstructions.count > 0) {
         // calculate distance from location to the next turn
-        SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:0];
+        SMTurnInstruction *nextTurn = self.turnInstructions[0];
         nextTurn.lengthInMeters = [self calculateDistanceToNextTurn:loc];
         nextTurn.lengthWithUnit = formatDistance(nextTurn.lengthInMeters);
         @synchronized(self.turnInstructions) {
@@ -648,7 +466,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
         // calculate distance from next turn to the end of the route
         for (int i = 1; i < self.turnInstructions.count; i++) {
-            self.distanceLeft += ((SMTurnInstruction *)[self.turnInstructions objectAtIndex:i]).lengthInMeters;
+            self.distanceLeft += ((SMTurnInstruction *)self.turnInstructions[i]).lengthInMeters;
         }
         debugLog(@"distance left: %.1f", self.distanceLeft);
     }
@@ -664,22 +482,24 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
  * Calculates distance from given location to next turn
  */
 - (CGFloat)calculateDistanceToNextTurn:(CLLocation *)loc {
-    if (self.turnInstructions.count == 0)
+    if (self.turnInstructions.count == 0) {
         return 0.0f;
+    }
 
-    SMTurnInstruction *nextTurn = [self.turnInstructions objectAtIndex:0];
+    SMTurnInstruction *nextTurn = self.turnInstructions[0];
 
     // If first turn still hasn't been reached, return linear distance to it.
-    if (self.pastTurnInstructions.count == 0)
+    if (self.pastTurnInstructions.count == 0) {
         return [loc distanceFromLocation:nextTurn.loc];
+    }
 
-    int firstIndex = self.lastVisitedWaypointIndex >= 0 ? self.lastVisitedWaypointIndex + 1 : 0;
+    NSUInteger firstIndex = self.lastVisitedWaypointIndex >= 0 ? self.lastVisitedWaypointIndex + 1 : 0;
     CGFloat distance = 0.0f;
     if (firstIndex < self.waypoints.count) {
-        distance = [loc distanceFromLocation:[self.waypoints objectAtIndex:firstIndex]];
+        distance = [loc distanceFromLocation:self.waypoints[firstIndex]];
         if (nextTurn.waypointsIndex <= self.waypoints.count) {
-            for (int i = firstIndex; i < nextTurn.waypointsIndex; i++) {
-                double d = [((CLLocation *)[self.waypoints objectAtIndex:i]) distanceFromLocation:[self.waypoints objectAtIndex:(i + 1)]];
+            for (NSUInteger i = firstIndex; i < nextTurn.waypointsIndex; i++) {
+                double d = [((CLLocation *)self.waypoints[i]) distanceFromLocation:self.waypoints[i+1]];
                 distance += d;
             }
         }
@@ -805,8 +625,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         NSString * response = [[NSString alloc] initWithData:req.responseData encoding:NSUTF8StringEncoding];
         if (response) {
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-                
-                
+
                 id jsonRoot = [NSJSONSerialization JSONObjectWithData:req.responseData options:NSJSONReadingAllowFragments error:nil];//[[[SBJsonParser alloc] init] objectWithString:response];
                 if (!jsonRoot || ([jsonRoot isKindOfClass:[NSDictionary class]] == NO) || ([jsonRoot[@"status"] intValue] != 0)) {
                     if (self.delegate) {
@@ -833,9 +652,6 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
                         }
                     });
                 }
-                
-                
-                
             });
         }
     }
@@ -858,7 +674,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     NSMutableArray * past = [NSMutableArray array];
     NSMutableArray * future = [NSMutableArray array];
     for (int i = 0; i < self.allTurnInstructions.count; i++) {
-        SMTurnInstruction * currentTurn = [self.allTurnInstructions objectAtIndex:i];
+        SMTurnInstruction * currentTurn = self.allTurnInstructions[i];
         if (self.lastVisitedWaypointIndex < currentTurn.waypointsIndex) {
             currentIndex = i;
             [future addObject:currentTurn];
@@ -871,10 +687,6 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         self.turnInstructions = future;
     }
     
-//    if ([self.turnInstructions isEqual:future] == NO || [self.pastTurnInstructions isEqual:past] == NO) {
-//        [self.delegate updateTurn:YES];
-//    }
-    
     [self.delegate updateTurn:YES];
     
     if (self.turnInstructions.count == 0) {
@@ -885,42 +697,69 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 - (BOOL)findNearestRouteSegmentForLocation:(CLLocation *)loc withMaxDistance:(CGFloat)maxDistance {
     double min = MAXFLOAT;
 
-    locLog(@"Last visited waypoint index: %d", self.lastVisitedWaypointIndex);
+    locLog(@"Last visited waypoint index: %lu", self.lastVisitedWaypointIndex);
 
-    
+    if (self.routeType != SMRouteTypeBike && self.routeType != SMRouteTypeWalk) {
+        for (NSUInteger i = 0; i < self.waypoints.count - 1; i++) {
+            CLLocation *a = self.waypoints[i];
+            CLLocation *b = self.waypoints[i+1];
+            CGFloat distanceFromStartPoint = [a distanceFromLocation:loc];
+            if (distanceFromStartPoint < maxDistance) {
+                min = distanceFromStartPoint;
+                self.lastVisitedWaypointIndex = i - 1; // Keep previous as last visited
+                self.distanceFromRoute = min;
+                self.snapArrow = YES;
+                self.lastCorrectedLocation = loc;
+                return min < maxDistance;
+            }
+            CGFloat distanceFromLine = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
+            if (distanceFromLine <= min) {
+                min = distanceFromLine;
+                self.lastVisitedWaypointIndex = i;
+                self.distanceFromRoute = min;
+                self.snapArrow = YES;
+                self.lastCorrectedLocation = loc;
+                return min < maxDistance;
+            }
+        }
+    }
+
     /**
      * first check the most likely position
      */
     NSInteger startPoint = MAX(self.lastVisitedWaypointIndex, 0);
-    
-    for (int i = startPoint; i < MIN(self.waypoints.count - 1, startPoint + 5); i++) {
-        CLLocation *a = [self.waypoints objectAtIndex:i];
-        CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
-        double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
-        if (d < 0.0)
-            continue;
-        if (d <= min) {
-            min = d;
-            self.lastVisitedWaypointIndex = i;
-        }
-        if (min < 2) {
-            // Close enough :)
-            break;
+    if (min > maxDistance) {
+        for (NSUInteger i = startPoint; i < MIN(self.waypoints.count - 1, startPoint + 5); i++) {
+            CLLocation *a = self.waypoints[i];
+            CLLocation *b = self.waypoints[i+1];
+            double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
+            if (d < 0.0) {
+                continue;
+            }
+            if (d <= min) {
+                min = d;
+                self.lastVisitedWaypointIndex = i;
+            }
+            if (min < 2) {
+                // Close enough :)
+                break;
+            }
         }
     }
-    
+
     /**
      * then check the remaining waypoints
      */
     if (min > maxDistance) {
         locLog(@"entered FUTURE block!");
         startPoint = MIN(self.waypoints.count - 1, startPoint + 5);
-        for (int i = startPoint; i < MIN(self.waypoints.count - 1, startPoint + 5); i++) {
+        for (NSUInteger i = startPoint; i < MIN(self.waypoints.count - 1, startPoint + 5); i++) {
             CLLocation *a = [self.waypoints objectAtIndex:i];
             CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
             double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
-            if (d < 0.0)
+            if (d < 0.0) {
                 continue;
+            }
             if (d <= min) {
                 min = d;
                 self.lastVisitedWaypointIndex = i;
@@ -937,7 +776,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     if (min > maxDistance) {
         locLog(@"entered PAST block!");
         startPoint = 0;
-        for (int i = startPoint; i < MIN(self.waypoints.count - 1, self.lastVisitedWaypointIndex); i++) {
+        for (NSUInteger i = startPoint; i < MIN(self.waypoints.count - 1, self.lastVisitedWaypointIndex); i++) {
             CLLocation *a = [self.waypoints objectAtIndex:i];
             CLLocation *b = [self.waypoints objectAtIndex:(i + 1)];
             double d = distanceFromLineInMeters(loc.coordinate, a.coordinate, b.coordinate);
@@ -958,7 +797,7 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         /**
          * check the distance from start
          */
-        min = [loc distanceFromLocation:[self.waypoints objectAtIndex:0]];
+        min = [loc distanceFromLocation:self.waypoints[0]];
         /**
          * if we are less then 5m away from start snap the arrow
          *
@@ -968,20 +807,18 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
             self.distanceFromRoute = min;
             self.lastVisitedWaypointIndex = 0;
             
-            CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
-            CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
+            CLLocation *a = self.waypoints[self.lastVisitedWaypointIndex];
+            CLLocation *b = self.waypoints[self.lastVisitedWaypointIndex + 1];
             CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
             
             self.lastCorrectedHeading = [SMGPSUtil bearingBetweenStartLocation:loc andEndLocation:a];
             self.lastCorrectedLocation = [[CLLocation alloc] initWithCoordinate:coord altitude:loc.altitude horizontalAccuracy:loc.horizontalAccuracy verticalAccuracy:loc.verticalAccuracy course:loc.course speed:loc.speed timestamp:loc.timestamp];
-//            self.snapArrow = YES;
-
         }
     } else if (min <= maxDistance && self.lastVisitedWaypointIndex >= 0) {
         self.distanceFromRoute = min;
         
-        CLLocation *a = [self.waypoints objectAtIndex:self.lastVisitedWaypointIndex];
-        CLLocation *b = [self.waypoints objectAtIndex:(self.lastVisitedWaypointIndex + 1)];
+        CLLocation *a = self.waypoints[self.lastVisitedWaypointIndex];
+        CLLocation *b = self.waypoints[self.lastVisitedWaypointIndex + 1];
         CLLocationCoordinate2D coord = closestCoordinate(loc.coordinate, a.coordinate, b.coordinate);
         
         if ([a distanceFromLocation:b] > 0.0f) {
@@ -1040,18 +877,27 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
     /**
      * are we close to the finish (< 10m or 3s left)?
      */
-    if (distanceToFinish < 10.0 || timeToFinish <= 3) {
+    if (distanceToFinish < self.distanceToFinishRange || timeToFinish <= 3) {
         [self.delegate reachedDestination];
         return;
     }
     
     if (isTooFar) {
+        // Don't recalculate for non-bike or non-walk routes
+        if (self.routeType != SMRouteTypeBike && self.routeType != SMRouteTypeWalk) {
+            return;
+        }
         self.snapArrow = NO;
         self.lastVisitedWaypointIndex = -1;
         [self recalculateRoute:loc];
     }
-    
-    
+}
+
+- (void)setLastVisitedWaypointIndex:(NSInteger)lastVisitedWaypointIndex {
+    if (lastVisitedWaypointIndex != _lastVisitedWaypointIndex) {
+        NSLog(@"Last visit: %lu", lastVisitedWaypointIndex);
+    }
+    _lastVisitedWaypointIndex = lastVisitedWaypointIndex;
 }
 
 @end

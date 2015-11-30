@@ -53,30 +53,28 @@ NSString *directionString(NSString *abbreviation) {
 // Returns only string representation of the driving direction
 - (void)generateDescriptionString {
     NSString *key = [@"direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
-    NSString *desc = [NSString stringWithFormat:translateString(key), translateString([@"direction_number_" stringByAppendingString:self.ordinalDirection])];
-    self.descriptionString = desc;
-    if (self.vehicle > kVehicleBike) {
-        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
-        self.descriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.descriptionString];
+    if (self.routeType == SMRouteTypeBike || self.routeType == SMRouteTypeWalk) {
+
+        NSString *desc = [NSString stringWithFormat:translateString(key), translateString([@"direction_number_" stringByAppendingString:self.ordinalDirection])];
+        self.descriptionString = desc;
+    } else {
+        self.descriptionString = [NSString stringWithFormat:translateString(key), self.routeLineDestination];
     }
 }
 
 - (void)generateStartDescriptionString {
-    NSString *key = [@"first_direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
-    NSString *desc = [NSString stringWithFormat:translateString(key), translateString([@"direction_" stringByAppendingString:self.directionAbrevation]), translateString([@"direction_number_" stringByAppendingString:self.ordinalDirection])];
-    self.descriptionString = desc;
-    if (self.vehicle > kVehicleBike) {
-        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
-        self.descriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.descriptionString];
+    if (self.routeType == SMRouteTypeBike || self.routeType == SMRouteTypeWalk) {
+        NSString *key = [@"first_direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
+        NSString *desc = [NSString stringWithFormat:translateString(key), translateString([@"direction_" stringByAppendingString:self.directionAbrevation]), translateString([@"direction_number_" stringByAppendingString:self.ordinalDirection])];
+        self.descriptionString = desc;
+    } else {
+        NSString *key = [@"direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
+        self.descriptionString = [NSString stringWithFormat:translateString(key), self.routeLineStart,self.routeLineName, self.routeLineDestination];
     }
 }
 
 - (void)generateShortDescriptionString {
     self.shortDescriptionString = self.wayName;
-    if (self.vehicle > kVehicleBike) {
-        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
-        self.shortDescriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.shortDescriptionString];
-    }
 }
 
 
@@ -84,15 +82,16 @@ NSString *directionString(NSString *abbreviation) {
 - (void)generateFullDescriptionString {
     NSString *key = [@"direction_" stringByAppendingFormat:@"%d", self.drivingDirection];
 
-    if (self.drivingDirection != 0 && self.drivingDirection != 15 && self.drivingDirection != 100) {
-        self.fullDescriptionString = [NSString stringWithFormat:@"%@ %@", translateString(key), self.wayName];
-        return;
-    }
-    self.fullDescriptionString = [NSString stringWithFormat:@"%@", translateString(key)];
-    
-    if (self.vehicle > kVehicleBike) {
-        NSString * v =  [NSString stringWithFormat:@"vehicle_%d", self.vehicle];
-        self.fullDescriptionString = [NSString stringWithFormat:@"%@: %@", translateString(v), self.fullDescriptionString];
+    if (self.routeType == SMRouteTypeBike || self.routeType == SMRouteTypeWalk) {
+        if (self.drivingDirection != 0 && self.drivingDirection != 15 && self.drivingDirection != 100) {
+            self.fullDescriptionString = [NSString stringWithFormat:@"%@ %@", translateString(key), self.wayName];
+            return;
+        }
+        self.fullDescriptionString = [NSString stringWithFormat:@"%@", translateString(key)];
+    } else if(self.drivingDirection == 18) {
+        self.fullDescriptionString = [NSString stringWithFormat:translateString(key), self.routeLineStart, self.routeLineName, self.routeLineDestination];
+    } else if (self.drivingDirection == 19) {
+        self.fullDescriptionString = [NSString stringWithFormat:translateString(key), self.routeLineDestination];
     }
 }
 
@@ -113,9 +112,25 @@ NSString *directionString(NSString *abbreviation) {
             [self getLocation].coordinate.latitude, [self getLocation].coordinate.longitude];
 }
 
--(void)setDrivingDirection:(TurnDirection)drivingDirection{
+-(void)setDrivingDirection:(TurnDirection)drivingDirection {
     _drivingDirection = drivingDirection;
     self.imageName = icons[self.drivingDirection];
+}
+
+- (void)setRouteType:(SMRouteType)routeType {
+    _routeType = routeType;
+
+    if (self.drivingDirection == 18 || self.drivingDirection == 19) { // For public transport, override icon.
+        switch (self.routeType) {
+            case SMRouteTypeSTrain: self.imageName = @"STrainDirection"; break;
+            case SMRouteTypeTrain: self.imageName = @"TrainDirection"; break;
+            case SMRouteTypeBus: self.imageName = @"BusDirection"; break;
+            case SMRouteTypeFerry: self.imageName = @"FerryDirection"; break;
+            case SMRouteTypeMetro: self.imageName = @"MetroDirection"; break;
+            case SMRouteTypeWalk: self.imageName = @"WalkDirection"; break;
+            default: break;
+        }
+    }
 }
 
 @end
