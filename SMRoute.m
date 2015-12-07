@@ -16,8 +16,6 @@
 //#import "SMUtil.h"
 #import "SMRouteUtils.h"
 
-#define MAX_DISTANCE_FROM_PATH 30 // in meters
-
 @interface SMRoute()
 @property (nonatomic, strong) SMRequestOSRM * request;
 @property (nonatomic, strong) CLLocation * lastRecalcLocation;
@@ -47,7 +45,7 @@
         self.osrmServer = OSRM_SERVER;
         self.nextWaypoint = 0;
         self.transportLine = @"";
-        self.distanceToFinishRange = 10;
+        self.maxMarginRadius = 30;
     }
     return self;
 }
@@ -843,7 +841,8 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
 
 - (void) visitLocation:(CLLocation *)loc {
     self.snapArrow = YES;
-    int maxD = loc.horizontalAccuracy >= 0 ? MAX((loc.horizontalAccuracy / 3 + 20), MAX_DISTANCE_FROM_PATH) : MAX_DISTANCE_FROM_PATH;
+    int maxD = loc.horizontalAccuracy >= 0 ? MAX(loc.horizontalAccuracy / 3 + 20, self.maxMarginRadius) : self.maxMarginRadius;
+
     BOOL isTooFar = NO;
     @synchronized(self.visitedLocations) {
         [self updateDistances:loc];
@@ -875,9 +874,9 @@ NSMutableArray* decodePolyline (NSString *encodedString) {
         locLog(@"finishing in %ds %.0fm max distance: %.0fm", timeToFinish, roundf(distanceToFinish), roundf(maxD));
     }
     /**
-     * are we close to the finish (< 10m or 3s left)?
+     * are we close to the finish (< X meters or 3s left)?
      */
-    if (distanceToFinish < self.distanceToFinishRange || timeToFinish <= 3) {
+    if (distanceToFinish < self.maxMarginRadius || timeToFinish <= 3) {
         [self.delegate reachedDestination];
         return;
     }

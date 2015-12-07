@@ -73,7 +73,7 @@ typedef enum SMRouteType : NSUInteger {
 @property NSInteger estimatedRouteDistance;
 @property NSString * routeChecksum;
 @property NSString * destinationHint;
-@property CGFloat distanceToFinishRange;
+@property CGFloat maxMarginRadius;
 
 @property (nonatomic, strong) CLLocation * lastCorrectedLocation;
 @property double lastCorrectedHeading;
