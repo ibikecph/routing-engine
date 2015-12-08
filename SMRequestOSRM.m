@@ -232,6 +232,15 @@ static dispatch_queue_t reachabilityQueue;
             }
         } else {
 
+            BOOL isBrokenRoute = [connection.originalRequest.URL.absoluteString rangeOfString:@"api/journey"].location != NSNotFound;
+
+            if (isBrokenRoute) {
+                if ([self.delegate conformsToProtocol:@protocol(SMRequestOSRMDelegate)]) {
+                    [self.delegate request:self finishedWithResult:r];
+                }
+                return;
+            }
+
             if (!r || ([r isKindOfClass:[NSDictionary class]] == NO) || ([r[@"status"] intValue] != 0)) {
                 if (self.currentZ == DEFAULT_Z) {
                     if (self.originalJSON) {
